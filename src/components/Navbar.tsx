@@ -13,22 +13,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/50 backdrop-blur-md border-b border-brand-accent/10">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button className="p-2 hover:bg-brand-beige/20 rounded-full transition-colors md:hidden">
             <Menu className="w-5 h-5" />
           </button>
+          <img
+            src="/logo.png"
+            alt="Petit Logo"
+            className="h-14 w-auto"
+          />
           <a href="https://instagram.com/accesorios.petit" target="_blank" rel="noreferrer" className="hidden md:flex p-2 hover:bg-brand-beige/20 rounded-full transition-colors">
             <Instagram className="w-5 h-5" />
           </a>
         </div>
 
-        <div className="flex flex-col items-center">
-          <img
-            src="/logo.png"
-            alt="Petit Logo"
-            className="h-10 w-auto"
-          />
-        </div>
+        <div />
 
         <div className="flex items-center gap-4">
           <button 
