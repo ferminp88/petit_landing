@@ -1,0 +1,9 @@
+{
+  "name": "Petit Accesorios",
+  "description": "Tienda boutique de accesorios premium para mascotas con pedido vía WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "shopping",
+    "mobile-first"
+  ]
+}

@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fredoka", sans-serif;
+  
+  --color-brand-magenta: #f400cf;
+  --color-brand-pink: #ff004c;
+  --color-brand-orange: #ff7b00;
+  --color-brand-cream: #FAF9F6;
+  --color-brand-dark: #2D2D2D;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-cream text-brand-dark font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  .text-gradient {
+    @apply bg-linear-to-r from-brand-magenta via-brand-pink to-brand-orange bg-clip-text text-transparent;
+  }
+
+  .bg-gradient {
+    @apply bg-linear-to-r from-brand-magenta via-brand-pink to-brand-orange;
+  }
+}

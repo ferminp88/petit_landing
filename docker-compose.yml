@@ -1,0 +1,10 @@
+services:
+  petit:
+    build: .
+    ports:
+      - "127.0.0.1:3003:3000"
+    env_file: .env
+    volumes:
+      - ./server/uploads:/app/server/uploads
+      - ./server/database.db:/app/server/database.db
+    restart: unless-stopped

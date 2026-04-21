@@ -1,0 +1,38 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload changed files and rebuild
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASS }}
+          script_stop: true
+          envs: GITHUB_SHA
+          script: |
+            set -e
+            cd /opt/petit
+
+            # Sync source files from repo via git (pull from GitHub)
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin https://github.com/ferminp88/petit_landing.git
+            fi
+            git fetch origin main
+            git checkout -f origin/main
+
+            # Rebuild and restart
+            docker-compose build
+            docker-compose down
+            docker-compose up -d
+
+            echo "Deploy OK — commit $GITHUB_SHA"
