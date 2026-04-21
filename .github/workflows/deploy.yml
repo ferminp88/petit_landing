@@ -20,17 +20,12 @@ jobs:
           envs: GITHUB_SHA
           script: |
             set -e
+            git config --global --add safe.directory /opt/petit
             cd /opt/petit
 
-            # Sync source files from repo via git (pull from GitHub)
-            if [ ! -d ".git" ]; then
-              git init
-              git remote add origin https://github.com/ferminp88/petit_landing.git
-            fi
             git fetch origin main
             git checkout -f origin/main
 
-            # Rebuild and restart
             docker-compose build
             docker-compose down
             docker-compose up -d
