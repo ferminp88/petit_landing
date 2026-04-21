@@ -43,9 +43,14 @@ export function AdminProducts() {
     }
   }
 
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+
   const total = products.length;
   const activos = products.filter(p => p.active === 1).length;
   const inactivos = total - activos;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const paginated = products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -98,7 +103,7 @@ export function AdminProducts() {
               <div className="text-center py-12 text-slate-400 text-sm">
                 No hay productos. ¡Creá el primero!
               </div>
-            ) : products.map(product => (
+            ) : paginated.map(product => (
               <div
                 key={product.id}
                 className="grid grid-cols-[60px_1fr_110px_90px_100px_120px] gap-3 px-5 py-3 border-b border-slate-50 items-center last:border-0"
@@ -146,6 +151,43 @@ export function AdminProducts() {
               </div>
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-xs text-slate-400">
+                Página {page} de {totalPages} · {total} productos
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                      n === page
+                        ? 'bg-pink-500 text-white'
+                        : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
