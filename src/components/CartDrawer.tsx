@@ -174,7 +174,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   FINALIZAR COMPRA
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <p className="text-[10px] text-center text-brand-dark/40 uppercase tracking-widest italic">
+                <p className="text-sm text-center text-black font-medium">
                   Serás redirigido a WhatsApp para coordinar
                 </p>
               </div>
