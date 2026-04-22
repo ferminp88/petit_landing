@@ -17,11 +17,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
           <button className="p-2 hover:bg-brand-beige/20 rounded-full transition-colors md:hidden">
             <Menu className="w-5 h-5" />
           </button>
-          <img
-            src="/logo.png"
-            alt="Petit Logo"
-            className="h-14 w-auto"
-          />
+          <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            <img
+              src="/logo.png"
+              alt="Petit Logo"
+              className="h-14 w-auto cursor-pointer"
+            />
+          </a>
           <a href="https://instagram.com/accesorios.petit" target="_blank" rel="noreferrer" className="hidden md:flex p-2 hover:bg-brand-beige/20 rounded-full transition-colors">
             <Instagram className="w-5 h-5" />
           </a>
