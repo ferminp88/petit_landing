@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Upload, LogOut } from 'lucide-react';
 import { adminCreateProduct, adminUpdateProduct, adminFetchProducts } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
@@ -84,143 +84,147 @@ export function AdminProductForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="w-52 bg-slate-900 text-white flex flex-col p-4 gap-2 shrink-0">
-        <div className="text-xl font-display font-bold text-pink-400 px-3 py-4 tracking-widest">PETIT</div>
-        <div className="px-3 py-2 bg-pink-500 rounded-lg text-sm font-bold">📦 Productos</div>
-        <button
-          onClick={() => { logout(); navigate('/admin/login'); }}
-          className="mt-auto px-3 py-2 text-slate-400 hover:text-white text-sm text-left transition-colors"
-        >
-          🚪 Salir
-        </button>
-      </aside>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white border-b border-slate-200 px-7 py-4 flex items-center gap-4">
-          <button onClick={() => navigate('/admin/products')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+      {/* TOP NAV */}
+      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/admin/products')} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-bold text-slate-800">{isEdit ? 'Editar Producto' : 'Nuevo Producto'}</h1>
+          <span className="font-bold text-base text-white">{isEdit ? 'Editar Producto' : 'Nuevo Producto'}</span>
         </div>
+        <button
+          onClick={() => { logout(); navigate('/admin/login'); }}
+          className="p-2 text-slate-400 hover:text-white transition-colors"
+          title="Salir"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </header>
 
-        <div className="p-7 overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit} className="max-w-2xl bg-white rounded-xl border border-slate-200 p-8 space-y-6">
+      <div className="flex-1 p-4 md:p-7">
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200 p-5 md:p-8 space-y-5">
 
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
-                Foto del Producto
-              </label>
-              <div
-                className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-pink-300 transition-colors"
-                onClick={() => fileRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={e => e.preventDefault()}
-              >
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-40 h-40 object-cover rounded-xl mx-auto" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="text-slate-400">
-                    <Upload className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Arrastrá una foto o hacé click para subir</p>
-                    <p className="text-xs mt-1">JPG, PNG, WEBP — máx. 5MB</p>
-                  </div>
-                )}
-              </div>
-              <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handleImageChange} />
+          {/* FOTO */}
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+              Foto del Producto
+            </label>
+            <div
+              className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-pink-300 transition-colors"
+              onClick={() => fileRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={e => e.preventDefault()}
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-xl mx-auto" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="text-slate-400">
+                  <Upload className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Tocá para subir una foto</p>
+                  <p className="text-xs mt-1 opacity-70">JPG, PNG, WEBP — máx. 5MB</p>
+                </div>
+              )}
             </div>
+            <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handleImageChange} />
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Nombre *</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                  placeholder="Ej: Collar de Cuero"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Precio ($) *</label>
-                <input
-                  type="number"
-                  value={form.price}
-                  onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                  placeholder="4500"
-                  min="0"
-                />
-              </div>
-            </div>
-
+          {/* NOMBRE Y PRECIO */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Categoría *</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Nombre *</label>
               <input
                 type="text"
-                value={form.category}
-                onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+                value={form.name}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                placeholder="Ej: Collares"
+                placeholder="Ej: Collar de Cuero"
               />
             </div>
-
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Descripción</label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                rows={3}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 resize-none"
-                placeholder="Describí el producto..."
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Precio ($) *</label>
+              <input
+                type="number"
+                value={form.price}
+                onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+                placeholder="4500"
+                min="0"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Colores (opcional)</label>
-                <input
-                  type="text"
-                  value={form.color_options}
-                  onChange={e => setForm(p => ({ ...p, color_options: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                  placeholder="Marrón, Negro, Natural"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Separados por coma. Vacío = sin variante.</p>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Talles (opcional)</label>
-                <input
-                  type="text"
-                  value={form.size_options}
-                  onChange={e => setForm(p => ({ ...p, size_options: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                  placeholder="S, M, L, XL"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Separados por coma. Vacío = sin variante.</p>
-              </div>
+          {/* CATEGORÍA */}
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Categoría</label>
+            <input
+              type="text"
+              value={form.category}
+              onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+              placeholder="Ej: Collares"
+            />
+          </div>
+
+          {/* DESCRIPCIÓN */}
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Descripción</label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 resize-none"
+              placeholder="Describí el producto..."
+            />
+          </div>
+
+          {/* COLORES Y TALLES */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Colores (opcional)</label>
+              <input
+                type="text"
+                value={form.color_options}
+                onChange={e => setForm(p => ({ ...p, color_options: e.target.value }))}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+                placeholder="Marrón, Negro, Natural"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
             </div>
-
-            {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => navigate('/admin/products')}
-                className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-[2] py-3 bg-gradient text-white rounded-xl text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50"
-              >
-                {loading ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Crear Producto'}
-              </button>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Talles (opcional)</label>
+              <input
+                type="text"
+                value={form.size_options}
+                onChange={e => setForm(p => ({ ...p, size_options: e.target.value }))}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+                placeholder="S, M, L, XL"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
             </div>
-          </form>
-        </div>
+          </div>
+
+          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+          {/* BOTONES */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/products')}
+              className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-[2] py-3 bg-gradient text-white rounded-xl text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Crear Producto'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
