@@ -9,6 +9,7 @@ import { Footer } from './components/Footer';
 import { AdminLogin } from './admin/AdminLogin';
 import { AdminProducts } from './admin/AdminProducts';
 import { AdminProductForm } from './admin/AdminProductForm';
+import { DogCursor } from './components/DogCursor';
 import { fetchProducts } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -104,6 +105,8 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <>
+    <DogCursor />
     <Routes>
       <Route path="/" element={<Store />} />
       <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
@@ -112,5 +115,6 @@ export default function App() {
       <Route path="/admin/products/new" element={<AdminGuard><AdminProductForm /></AdminGuard>} />
       <Route path="/admin/products/:id/edit" element={<AdminGuard><AdminProductForm /></AdminGuard>} />
     </Routes>
+    </>
   );
 }

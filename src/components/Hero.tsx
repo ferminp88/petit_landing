@@ -51,7 +51,7 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg text-brand-dark/60 mb-10 font-light"
         >
-          Explora nuestra colección boutique de collares, correas y accesorios diseñados para destacar.
+          Explora nuestra colección de collares, correas y accesorios diseñados para destacar.
         </motion.p>
         <motion.button 
           initial={{ opacity: 0, y: 20 }}
