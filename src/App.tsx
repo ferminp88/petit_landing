@@ -83,9 +83,23 @@ function Store() {
   );
 }
 
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('petit_admin_token');
-  return token ? <>{children}</> : <Navigate to="/admin/login" replace />;
+  if (!isTokenValid(token)) {
+    localStorage.removeItem('petit_admin_token');
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <>{children}</>;
 }
 
 export default function App() {
