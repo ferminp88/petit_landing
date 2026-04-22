@@ -35,7 +35,7 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="uppercase tracking-[0.2em] text-xs font-bold text-brand-magenta mb-4 block"
         >
-          Hecho a mano con amor
+          Hecho con amor
         </motion.span>
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
@@ -43,7 +43,7 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-5xl md:text-7xl font-display font-bold mb-6 text-brand-dark leading-tight"
         >
-          Accesorios únicos para tu <span className="text-gradient">mejor amigo</span>
+          Hago accesorios para tu <span className="text-gradient">mejor compañía</span>
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
