@@ -66,7 +66,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-4xl bg-brand-cream rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+          className="relative w-full max-w-4xl max-h-[90vh] bg-brand-cream rounded-2xl shadow-2xl overflow-hidden"
         >
           <button
             onClick={onClose}
@@ -75,7 +75,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             <X className="w-5 h-5" />
           </button>
 
-          <div className="w-full md:w-1/2 flex flex-col bg-brand-cream">
+          <div className="max-h-[90vh] overflow-y-auto md:flex md:overflow-hidden">
+
+          <div className="w-full md:w-1/2 md:max-h-[90vh] md:flex md:flex-col bg-brand-cream">
             <motion.div
               drag={hasMultiple ? 'x' : false}
               dragConstraints={{ left: 0, right: 0 }}
@@ -145,7 +147,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             )}
           </div>
 
-          <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto">
+          <div className="w-full md:w-1/2 p-8 md:p-12 md:max-h-[90vh] md:overflow-y-auto">
             <span className="inline-block px-3 py-1 bg-black/5 text-[10px] uppercase tracking-widest font-bold text-brand-magenta rounded-lg mb-4">
               {product.category}
             </span>
@@ -209,6 +211,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 AGREGAR AL CARRITO
               </button>
             </div>
+          </div>
+
           </div>
         </motion.div>
       </div>

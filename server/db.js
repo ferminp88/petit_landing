@@ -37,6 +37,59 @@ if (backfillRows.length > 0) {
   tx(backfillRows);
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS migrations (
+    key TEXT PRIMARY KEY,
+    value INTEGER DEFAULT 0,
+    applied_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+function parseImagesJSON(val) {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed.filter(x => typeof x === 'string' && x.length > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+const DEMO_EXTRA_IMAGES_POOL = [
+  'https://images.unsplash.com/photo-1587300003388-59208cc962cb?q=80&w=800',
+  'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=800',
+  'https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?q=80&w=800',
+  'https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?q=80&w=800',
+  'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?q=80&w=800',
+  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800',
+  'https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?q=80&w=800',
+];
+
+const DEMO_MULTI_IMAGES_MIG_VERSION = 1;
+const demoMigRow = db.prepare("SELECT value FROM migrations WHERE key = 'demo_multi_images'").get();
+if (!demoMigRow || demoMigRow.value < DEMO_MULTI_IMAGES_MIG_VERSION) {
+  const products = db.prepare('SELECT id, image, images FROM products').all();
+  const updateStmt = db.prepare('UPDATE products SET images = ? WHERE id = ?');
+  const markMigStmt = db.prepare(
+    "INSERT OR REPLACE INTO migrations (key, value, applied_at) VALUES ('demo_multi_images', ?, datetime('now'))"
+  );
+  const demoTx = db.transaction(() => {
+    for (const p of products) {
+      const current = parseImagesJSON(p.images);
+      if (current.length >= 2) continue;
+      const own = current[0] || p.image;
+      if (!own) continue;
+      const available = DEMO_EXTRA_IMAGES_POOL.filter(u => u !== own);
+      const start = p.id % available.length;
+      const extras = [available[start % available.length], available[(start + 1) % available.length]];
+      const next = [own, ...extras].slice(0, 10);
+      updateStmt.run(JSON.stringify(next), p.id);
+    }
+    markMigStmt.run(DEMO_MULTI_IMAGES_MIG_VERSION);
+  });
+  demoTx();
+}
+
 const seedProducts = [
   ['Collar de Cuero Artesanal', 'Collar de cuero genuino curtido vegetalmente con herrajes de bronce.', 4500, 'Collares', 'https://images.unsplash.com/photo-1544567821-ea219e84428c?q=80&w=800', 'Marrón, Negro, Natural', 'S, M, L'],
   ['Arnés Confort para Perros', 'Arnés ergonómico acolchado para caminatas cómodas.', 5800, 'Arneses', 'https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?q=80&w=800', 'Gris, Azul, Rojo', 'S, M, L, XL'],
