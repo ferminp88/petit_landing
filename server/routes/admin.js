@@ -12,6 +12,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp'];
+const MAX_IMAGES_PER_PRODUCT = 10;
 
 const storage = multer.diskStorage({
   destination: uploadsDir,
@@ -41,6 +42,27 @@ function validId(id) {
   return /^\d+$/.test(String(id));
 }
 
+function parseImages(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed.filter(x => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function deleteLocalUpload(imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith('/uploads/')) return;
+  const filePath = path.join(__dirname, '..', imageUrl);
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch {
+    // non-fatal
+  }
+}
+
 router.use(requireAuth);
 
 router.get('/products', (req, res) => {
@@ -48,7 +70,7 @@ router.get('/products', (req, res) => {
   res.json(products);
 });
 
-router.post('/products', upload.single('image'), (req, res) => {
+router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
   const name = sanitizeStr(req.body.name, 200);
   const description = sanitizeStr(req.body.description, 1000);
   const category = sanitizeStr(req.body.category, 100);
@@ -60,18 +82,20 @@ router.post('/products', upload.single('image'), (req, res) => {
     return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
   }
 
-  const image = req.file ? `/uploads/${req.file.filename}` : '';
+  const uploaded = (req.files || []).map(f => `/uploads/${f.filename}`);
+  const images = uploaded;
+  const image = images[0] || '';
 
   const result = db.prepare(`
-    INSERT INTO products (name, description, price, category, image, color_options, size_options)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(name, description, price, category, image, color_options, size_options);
+    INSERT INTO products (name, description, price, category, image, images, color_options, size_options)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options);
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(product);
 });
 
-router.put('/products/:id', upload.single('image'), (req, res) => {
+router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
 
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
@@ -83,19 +107,24 @@ router.put('/products/:id', upload.single('image'), (req, res) => {
   const color_options = req.body.color_options !== undefined ? sanitizeStr(req.body.color_options, 300) : existing.color_options;
   const size_options = req.body.size_options !== undefined ? sanitizeStr(req.body.size_options, 300) : existing.size_options;
   const price = req.body.price ? parseInt(req.body.price) : existing.price;
-  const image = req.file ? `/uploads/${req.file.filename}` : existing.image;
 
   if (isNaN(price) || price < 0) return res.status(400).json({ error: 'Precio inválido' });
 
-  if (req.file && existing.image && existing.image.startsWith('/uploads/')) {
-    const oldPath = path.join(__dirname, '..', existing.image);
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-  }
+  const prevImages = parseImages(existing.images);
+  const kept = req.body.existing_images !== undefined
+    ? parseImages(req.body.existing_images)
+    : prevImages;
+  const uploaded = (req.files || []).map(f => `/uploads/${f.filename}`);
+  const finalImages = [...kept, ...uploaded].slice(0, MAX_IMAGES_PER_PRODUCT);
+  const removed = prevImages.filter(img => !kept.includes(img));
+  for (const oldUrl of removed) deleteLocalUpload(oldUrl);
+
+  const image = finalImages[0] || '';
 
   db.prepare(`
-    UPDATE products SET name=?, description=?, price=?, category=?, image=?, color_options=?, size_options=?
+    UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?
     WHERE id=?
-  `).run(name, description, price, category, image, color_options, size_options, req.params.id);
+  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, req.params.id);
 
   res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
 });
@@ -106,10 +135,9 @@ router.delete('/products/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Producto no encontrado' });
 
-  if (existing.image && existing.image.startsWith('/uploads/')) {
-    const imgPath = path.join(__dirname, '..', existing.image);
-    if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-  }
+  const allImages = parseImages(existing.images);
+  if (allImages.length === 0 && existing.image) allImages.push(existing.image);
+  for (const url of allImages) deleteLocalUpload(url);
 
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
   res.json({ ok: true });

@@ -2,6 +2,25 @@ import { Product, RawProduct } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
+function resolveUrl(url: string): string {
+  return url.startsWith('/uploads/') ? `${API_BASE}${url}` : url;
+}
+
+function parseImagesField(raw: RawProduct): string[] {
+  if (raw.images) {
+    try {
+      const parsed = JSON.parse(raw.images);
+      if (Array.isArray(parsed)) {
+        const urls = parsed.filter((x): x is string => typeof x === 'string' && x.length > 0);
+        if (urls.length > 0) return urls.map(resolveUrl);
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return raw.image ? [resolveUrl(raw.image)] : [];
+}
+
 function mapProduct(raw: RawProduct): Product {
   const variants: Product['variants'] = [];
   if (raw.color_options?.trim()) {
@@ -10,13 +29,15 @@ function mapProduct(raw: RawProduct): Product {
   if (raw.size_options?.trim()) {
     variants.push({ type: 'size', options: raw.size_options.split(',').map(s => s.trim()).filter(Boolean) });
   }
+  const images = parseImagesField(raw);
   return {
     id: String(raw.id),
     name: raw.name,
     description: raw.description,
     price: raw.price,
     category: raw.category,
-    image: raw.image.startsWith('/uploads/') ? `${API_BASE}${raw.image}` : raw.image,
+    image: images[0] ?? '',
+    images,
     variants: variants.length > 0 ? variants : undefined,
   };
 }

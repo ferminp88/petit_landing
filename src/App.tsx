@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -6,6 +6,7 @@ import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
+import { Filters, PRICE_RANGES } from './components/Filters';
 import { AdminLogin } from './admin/AdminLogin';
 import { AdminProducts } from './admin/AdminProducts';
 import { AdminProductForm } from './admin/AdminProductForm';
@@ -18,7 +19,9 @@ function Store() {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [category, setCategory] = useState('Todos');
+  const [size, setSize] = useState('Todos');
+  const [priceRangeId, setPriceRangeId] = useState('any');
 
   useEffect(() => {
     fetchProducts()
@@ -26,10 +29,37 @@ function Store() {
       .finally(() => setLoading(false));
   }, []);
 
-  const categories = ['Todos', ...Array.from(new Set(products.map(p => p.category)))];
-  const filteredProducts = activeCategory === 'Todos'
-    ? products
-    : products.filter(p => p.category === activeCategory);
+  const categories = useMemo(
+    () => Array.from(new Set(products.map(p => p.category).filter(Boolean))),
+    [products]
+  );
+  const sizes = useMemo(() => {
+    const all = new Set<string>();
+    for (const p of products) {
+      const sizeVariant = p.variants?.find(v => v.type === 'size');
+      sizeVariant?.options.forEach(o => all.add(o));
+    }
+    return Array.from(all);
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    const priceRange = PRICE_RANGES.find(r => r.id === priceRangeId) ?? PRICE_RANGES[0];
+    return products.filter(p => {
+      if (category !== 'Todos' && p.category !== category) return false;
+      if (size !== 'Todos') {
+        const sizeVariant = p.variants?.find(v => v.type === 'size');
+        if (!sizeVariant?.options.includes(size)) return false;
+      }
+      if (p.price < priceRange.min || p.price > priceRange.max) return false;
+      return true;
+    });
+  }, [products, category, size, priceRangeId]);
+
+  const clearFilters = () => {
+    setCategory('Todos');
+    setSize('Todos');
+    setPriceRangeId('any');
+  };
 
   return (
     <div className="min-h-screen flex flex-col pt-16">
@@ -37,36 +67,45 @@ function Store() {
       <main className="flex-grow">
         <Hero />
         <section id="products" className="max-w-7xl mx-auto px-4 py-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
             <div className="max-w-lg space-y-2">
               <h3 className="text-4xl font-display font-bold text-brand-dark">Nuestra Colección</h3>
               <p className="text-sm text-brand-dark/60 max-w-md font-light">
                 Cada pieza es seleccionada pensando en la elegancia y el bienestar de tu mascota.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`px-6 py-2 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all ${
-                    activeCategory === category
-                      ? 'bg-gradient text-white shadow-lg shadow-brand-pink/20'
-                      : 'bg-black/5 text-brand-dark/60 hover:bg-black/10'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+            <Filters
+              categories={categories}
+              sizes={sizes}
+              category={category}
+              size={size}
+              priceRangeId={priceRangeId}
+              onCategoryChange={setCategory}
+              onSizeChange={setSize}
+              onPriceRangeChange={setPriceRangeId}
+              onClear={clearFilters}
+            />
           </div>
 
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="w-8 h-8 border-4 border-brand-pink border-t-transparent rounded-full animate-spin" />
             </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-20 text-brand-dark/50">
+              <p className="text-sm font-light">No hay productos que coincidan con los filtros.</p>
+              <button
+                onClick={clearFilters}
+                className="mt-4 text-xs uppercase tracking-widest font-bold text-brand-magenta hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            </div>
           ) : (
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+            <motion.div
+              layout
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10"
+            >
               <AnimatePresence mode='popLayout'>
                 {filteredProducts.map(product => (
                   <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />

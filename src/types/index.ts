@@ -4,6 +4,7 @@ export interface Product {
   price: number;
   description: string;
   image: string;
+  images: string[];
   category: string;
   variants?: {
     type: 'color' | 'size';
@@ -31,6 +32,7 @@ export interface RawProduct {
   price: number;
   category: string;
   image: string;
+  images: string;
   color_options: string;
   size_options: string;
   active: number;

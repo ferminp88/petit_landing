@@ -13,12 +13,29 @@ db.exec(`
     price INTEGER NOT NULL,
     category TEXT DEFAULT '',
     image TEXT DEFAULT '',
+    images TEXT DEFAULT '[]',
     color_options TEXT DEFAULT '',
     size_options TEXT DEFAULT '',
     active INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   )
 `);
+
+const cols = db.prepare("PRAGMA table_info(products)").all();
+if (!cols.some(c => c.name === 'images')) {
+  db.exec("ALTER TABLE products ADD COLUMN images TEXT DEFAULT '[]'");
+}
+
+const backfillRows = db.prepare(
+  "SELECT id, image FROM products WHERE (images IS NULL OR images = '' OR images = '[]') AND image != ''"
+).all();
+if (backfillRows.length > 0) {
+  const backfillStmt = db.prepare('UPDATE products SET images = ? WHERE id = ?');
+  const tx = db.transaction((rows) => {
+    for (const r of rows) backfillStmt.run(JSON.stringify([r.image]), r.id);
+  });
+  tx(backfillRows);
+}
 
 const seedProducts = [
   ['Collar de Cuero Artesanal', 'Collar de cuero genuino curtido vegetalmente con herrajes de bronce.', 4500, 'Collares', 'https://images.unsplash.com/photo-1544567821-ea219e84428c?q=80&w=800', 'Marrón, Negro, Natural', 'S, M, L'],
