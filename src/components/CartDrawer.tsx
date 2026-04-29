@@ -15,11 +15,11 @@ const PAYMENT_METHODS: PaymentMethod[] = ['Mercado Pago', 'Transferencia', 'Efec
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { cart, totalPrice, updateQuantity, removeFromCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Mercado Pago');
-  const [userData, setUserData] = useState({ name: '', address: '' });
+  const [userData, setUserData] = useState({ name: '', address: '', dogWeight: '' });
 
   const handleCheckout = () => {
-    if (!userData.name || !userData.address) {
-      alert('Por favor, completa tu nombre y dirección.');
+    if (!userData.name || !userData.address || !userData.dogWeight) {
+      alert('Por favor, completa tu nombre, dirección y el peso del perro.');
       return;
     }
     const link = generateWhatsAppLink(cart, totalPrice, paymentMethod, userData);
@@ -162,6 +162,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         placeholder="Dirección de envío"
                         value={userData.address}
                         onChange={e => setUserData(prev => ({ ...prev, address: e.target.value }))}
+                        className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Peso del perro (kg)"
+                        value={userData.dogWeight}
+                        onChange={e => setUserData(prev => ({ ...prev, dogWeight: e.target.value }))}
                         className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
                       />
                     </div>

@@ -16,10 +16,6 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.7 }}
           className="md:col-span-5 order-2 md:order-1"
         >
-          <span className="block uppercase tracking-[0.25em] text-[11px] font-medium text-mocha mb-6">
-            Hecho con amor
-          </span>
-
           <h1 className="font-display text-5xl md:text-7xl font-medium leading-[1.05] text-ink mb-8 lowercase">
             accesorios para<br />
             tu mejor<br />

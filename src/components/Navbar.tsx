@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Instagram, Menu, X, Search } from 'lucide-react';
+import { ShoppingBag, Instagram, Menu, X, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -7,7 +8,12 @@ interface NavbarProps {
   onCartClick: () => void;
 }
 
-const NAV_LINKS = ['Collares', 'Correas', 'Arneses', 'Ropa'];
+type NavLink = { label: string; targetId: string };
+const NAV_LINKS: NavLink[] = [
+  { label: 'Productos', targetId: 'products' },
+  { label: 'Sobre Petit', targetId: 'about' },
+  { label: 'Contacto', targetId: 'contact' },
+];
 
 export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const { totalItems } = useCart();
@@ -36,16 +42,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
 
           <ul className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map(link => (
-              <li key={link}>
+              <li key={link.targetId}>
                 <a
-                  href={`#${link.toLowerCase()}`}
+                  href={`#${link.targetId}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="text-[11px] uppercase tracking-[0.22em] font-medium text-ink hover:text-petit transition-colors"
                 >
-                  {link}
+                  {link.label}
                 </a>
               </li>
             ))}
@@ -61,12 +67,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             >
               <Instagram className="w-5 h-5 text-ink" />
             </a>
-            <button
+            <Link
+              to="/admin/login"
               className="hidden md:flex p-2 hover:bg-sand rounded-full transition-colors"
-              aria-label="Buscar"
+              aria-label="Acceso administrador"
             >
-              <Search className="w-5 h-5 text-ink" />
-            </button>
+              <User className="w-5 h-5 text-ink" />
+            </Link>
             <button
               onClick={onCartClick}
               className="relative p-2 hover:bg-sand rounded-full transition-colors"
@@ -119,20 +126,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
               </div>
               <ul className="space-y-6">
                 {NAV_LINKS.map(link => (
-                  <li key={link}>
+                  <li key={link.targetId}>
                     <a
-                      href={`#${link.toLowerCase()}`}
+                      href={`#${link.targetId}`}
                       onClick={(e) => {
                         e.preventDefault();
                         setMobileOpen(false);
-                        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+                        document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className="block font-display text-2xl text-ink hover:text-petit transition-colors"
                     >
-                      {link}
+                      {link.label}
                     </a>
                   </li>
                 ))}
+                <li>
+                  <Link
+                    to="/admin/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block font-display text-2xl text-ink hover:text-petit transition-colors"
+                  >
+                    Acceso admin
+                  </Link>
+                </li>
               </ul>
               <a
                 href="https://instagram.com/accesorios.petit"
