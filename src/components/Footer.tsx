@@ -4,7 +4,7 @@ import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-brand-dark text-white py-20 px-8">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div className="space-y-6">
           <h2 className="text-3xl font-display font-bold tracking-tight uppercase text-gradient">Petit</h2>
           <p className="text-sm text-white/60 leading-relaxed font-light">
@@ -29,19 +29,7 @@ export const Footer: React.FC = () => {
           </ul>
         </div>
 
-        <div>
-          <h4 className="text-xs uppercase tracking-[0.2em] font-bold text-white/30 mb-6 underline underline-offset-8">
-            Ayuda
-          </h4>
-          <ul className="space-y-3 text-sm text-white/60 text-left">
-            <li><a href="#" className="hover:text-brand-magenta transition-colors">Guía de Talles</a></li>
-            <li><a href="#" className="hover:text-brand-magenta transition-colors">Métodos de Envío</a></li>
-            <li><a href="#" className="hover:text-brand-magenta transition-colors">Preguntas Frecuentes</a></li>
-            <li><a href="#" className="hover:text-brand-magenta transition-colors">Cambios y Devoluciones</a></li>
-          </ul>
-        </div>
-
-        <div>
+<div>
            <h4 className="text-xs uppercase tracking-[0.2em] font-bold text-white/30 mb-6 underline underline-offset-8">
             Contacto
           </h4>
