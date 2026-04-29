@@ -68,9 +68,14 @@ function Store() {
         <Hero />
         <section id="products" className="max-w-7xl mx-auto px-4 py-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-            <div className="max-w-lg space-y-2">
-              <h3 className="text-4xl font-display font-bold text-brand-dark">Nuestra Colección</h3>
-              <p className="text-sm text-brand-dark/60 max-w-md font-light">
+            <div className="max-w-lg space-y-3">
+              <span className="block text-[10px] uppercase tracking-[0.25em] font-medium text-mocha">
+                Catálogo
+              </span>
+              <h3 className="font-display text-4xl md:text-5xl text-ink leading-tight">
+                Nuestra <em className="italic font-light">colección</em>
+              </h3>
+              <p className="text-sm text-mocha max-w-md font-light leading-relaxed">
                 Cada pieza es seleccionada pensando en la elegancia y el bienestar de tu mascota.
               </p>
             </div>
@@ -89,14 +94,14 @@ function Store() {
 
           {loading ? (
             <div className="flex justify-center py-20">
-              <div className="w-8 h-8 border-4 border-brand-pink border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-mocha/30 border-t-ink rounded-full animate-spin" />
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-20 text-brand-dark/50">
+            <div className="text-center py-20 text-mocha">
               <p className="text-sm font-light">No hay productos que coincidan con los filtros.</p>
               <button
                 onClick={clearFilters}
-                className="mt-4 text-xs uppercase tracking-widest font-bold text-brand-magenta hover:underline"
+                className="mt-4 text-[11px] uppercase tracking-[0.22em] font-medium text-ink hover:text-petit border-b border-ink hover:border-petit pb-0.5 transition-colors"
               >
                 Limpiar filtros
               </button>
