@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Minus, Plus, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 
@@ -35,7 +35,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const goPrev = () => setCurrentIndex(i => (i - 1 + images.length) % images.length);
 
   useEffect(() => {
-    if (!hasMultiple && images.length === 0) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
       if (!hasMultiple) return;
@@ -53,165 +52,167 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-brand-brown/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
         />
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-4xl max-h-[90vh] bg-brand-cream rounded-2xl shadow-2xl overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="relative w-full max-w-5xl max-h-[100vh] md:max-h-[92vh] bg-bone overflow-hidden"
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 p-2 bg-brand-cream/80 backdrop-blur rounded-full hover:bg-brand-cream transition-colors shadow-sm"
+            className="absolute top-4 right-4 z-20 p-2 hover:bg-sand rounded-full transition-colors"
+            aria-label="Cerrar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-ink" />
           </button>
 
-          <div className="max-h-[90vh] overflow-y-auto md:flex md:overflow-hidden">
+          <div className="max-h-[100vh] md:max-h-[92vh] overflow-y-auto md:flex md:overflow-hidden">
 
-          <div className="w-full md:w-1/2 md:max-h-[90vh] md:flex md:flex-col bg-brand-cream">
-            <motion.div
-              drag={hasMultiple ? 'x' : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_, info) => {
-                if (!hasMultiple) return;
-                if (info.offset.x > 80) goPrev();
-                else if (info.offset.x < -80) goNext();
-              }}
-              className="relative flex-1 aspect-square md:aspect-auto overflow-hidden select-none touch-pan-y"
-            >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={currentIndex}
-                  src={images[currentIndex]}
-                  alt={`${product.name} ${currentIndex + 1}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  draggable={false}
-                />
-              </AnimatePresence>
+            <div className="w-full md:w-1/2 md:max-h-[92vh] md:flex md:flex-col bg-sand">
+              <motion.div
+                drag={hasMultiple ? 'x' : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(_, info) => {
+                  if (!hasMultiple) return;
+                  if (info.offset.x > 80) goPrev();
+                  else if (info.offset.x < -80) goNext();
+                }}
+                className="relative flex-1 aspect-square md:aspect-auto overflow-hidden select-none touch-pan-y"
+              >
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentIndex}
+                    src={images[currentIndex]}
+                    alt={`${product.name} ${currentIndex + 1}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    draggable={false}
+                  />
+                </AnimatePresence>
+
+                {hasMultiple && (
+                  <>
+                    <button
+                      onClick={goPrev}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-bone/80 backdrop-blur hover:bg-bone transition-colors"
+                      aria-label="Anterior"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-ink" />
+                    </button>
+                    <button
+                      onClick={goNext}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-bone/80 backdrop-blur hover:bg-bone transition-colors"
+                      aria-label="Siguiente"
+                    >
+                      <ChevronRight className="w-5 h-5 text-ink" />
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-ink/70 backdrop-blur text-[10px] font-medium text-bone tracking-[0.18em] uppercase">
+                      {currentIndex + 1} / {images.length}
+                    </div>
+                  </>
+                )}
+              </motion.div>
 
               {hasMultiple && (
-                <>
-                  <button
-                    onClick={goPrev}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-brand-cream/80 backdrop-blur rounded-full hover:bg-brand-cream shadow-md transition-all"
-                    aria-label="Anterior"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={goNext}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-brand-cream/80 backdrop-blur rounded-full hover:bg-brand-cream shadow-md transition-all"
-                    aria-label="Siguiente"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-brand-dark/40 backdrop-blur rounded-full text-[10px] font-bold text-white tracking-wider">
-                    {currentIndex + 1} / {images.length}
-                  </div>
-                </>
+                <div className="flex gap-2 p-3 overflow-x-auto bg-bone border-t border-mocha/10">
+                  {images.map((img, i) => (
+                    <button
+                      key={`${img}-${i}`}
+                      type="button"
+                      onClick={() => setCurrentIndex(i)}
+                      className={`flex-shrink-0 w-14 h-14 overflow-hidden border transition-colors ${
+                        i === currentIndex
+                          ? 'border-ink opacity-100'
+                          : 'border-mocha/15 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </button>
+                  ))}
+                </div>
               )}
-            </motion.div>
+            </div>
 
-            {hasMultiple && (
-              <div className="flex gap-2 p-3 overflow-x-auto bg-brand-cream border-t border-black/5">
-                {images.map((img, i) => (
-                  <button
-                    key={`${img}-${i}`}
-                    type="button"
-                    onClick={() => setCurrentIndex(i)}
-                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                      i === currentIndex
-                        ? 'border-brand-magenta opacity-100'
-                        : 'border-transparent opacity-50 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </button>
+            <div className="w-full md:w-1/2 p-8 md:p-12 md:max-h-[92vh] md:overflow-y-auto bg-bone">
+              <span className="block text-[10px] uppercase tracking-[0.25em] font-medium text-mocha mb-4">
+                {product.category}
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl text-ink mb-4 leading-tight">
+                {product.name}
+              </h2>
+              <p className="font-sans font-medium text-2xl text-ink mb-8">
+                ${product.price.toLocaleString('es-AR')}
+              </p>
+              <p className="text-mocha mb-10 leading-relaxed font-light text-sm">
+                {product.description}
+              </p>
+
+              <div className="space-y-6 mb-10">
+                {product.variants?.map((variant) => (
+                  <div key={variant.type}>
+                    <p className="text-[10px] uppercase tracking-[0.22em] font-medium text-mocha mb-3">
+                      {variant.type === 'color' ? 'Color' : 'Talle'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {variant.options.map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => setSelectedVariants(prev => ({ ...prev, [variant.type]: option }))}
+                          className={`px-5 py-2 text-[11px] uppercase tracking-[0.18em] font-medium border transition-colors ${
+                            selectedVariants[variant.type] === option
+                              ? 'bg-ink text-bone border-ink'
+                              : 'bg-transparent text-ink/70 border-mocha/25 hover:border-ink hover:text-ink'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
-          </div>
 
-          <div className="w-full md:w-1/2 p-8 md:p-12 md:max-h-[90vh] md:overflow-y-auto">
-            <span className="inline-block px-3 py-1 bg-black/5 text-[10px] uppercase tracking-widest font-bold text-brand-magenta rounded-lg mb-4">
-              {product.category}
-            </span>
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-brand-dark mb-4">
-              {product.name}
-            </h2>
-            <p className="text-2xl font-bold text-brand-dark mb-6">
-              ${product.price.toLocaleString('es-AR')}
-            </p>
-            <p className="text-brand-dark/60 mb-8 leading-relaxed font-light text-sm">
-              {product.description}
-            </p>
-
-            <div className="space-y-6 mb-8">
-              {product.variants?.map((variant) => (
-                <div key={variant.type}>
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-dark/40 mb-3">
-                    Seleccionar {variant.type === 'color' ? 'Color' : 'Talle'}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {variant.options.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => setSelectedVariants(prev => ({ ...prev, [variant.type]: option }))}
-                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
-                          selectedVariants[variant.type] === option
-                            ? 'bg-gradient text-white shadow-md shadow-brand-pink/20'
-                            : 'bg-black/5 text-brand-dark/60 hover:bg-black/10'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center border border-mocha/25 px-3 h-12">
+                  <button
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="p-1 text-mocha hover:text-ink transition-colors"
+                    aria-label="Restar"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-10 text-center font-medium text-sm">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="p-1 text-mocha hover:text-ink transition-colors"
+                    aria-label="Sumar"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-              ))}
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex items-center bg-black/5 rounded-2xl px-4 py-3 h-14 border border-black/5">
                 <button
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="p-1 hover:text-brand-magenta transition-colors"
+                  onClick={handleAdd}
+                  className="flex-1 h-12 bg-ink text-bone flex items-center justify-center font-medium tracking-[0.22em] text-[11px] uppercase hover:bg-mocha transition-colors"
                 >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-12 text-center font-bold">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(q => q + 1)}
-                  className="p-1 hover:text-brand-magenta transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
+                  Agregar al carrito
                 </button>
               </div>
-
-              <button
-                onClick={handleAdd}
-                className="flex-1 h-14 bg-gradient text-white rounded-2xl flex items-center justify-center gap-3 font-bold tracking-widest hover:brightness-110 transition-all shadow-xl shadow-brand-pink/30"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                AGREGAR AL CARRITO
-              </button>
             </div>
-          </div>
 
           </div>
         </motion.div>
