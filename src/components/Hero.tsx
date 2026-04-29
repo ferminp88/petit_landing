@@ -16,8 +16,6 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.7 }}
           className="md:col-span-5 order-2 md:order-1"
         >
-          <img src="/logo.png" alt="Petit" className="w-28 h-auto mb-10" />
-
           <span className="block uppercase tracking-[0.25em] text-[11px] font-medium text-mocha mb-6">
             Hecho con amor
           </span>
