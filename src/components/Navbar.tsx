@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Instagram, Menu, X } from 'lucide-react';
+import { ShoppingCart, Instagram, Menu, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
               className="relative p-2 hover:bg-sand rounded-full transition-colors"
               aria-label="Carrito"
             >
-              <ShoppingBag className="w-5 h-5 text-ink" />
+              <ShoppingCart className="w-5 h-5 text-ink" />
               <AnimatePresence>
                 {totalItems > 0 && (
                   <motion.span
