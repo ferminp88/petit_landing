@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Instagram, Menu, X, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ShoppingBag, Instagram, Menu, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -67,13 +66,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             >
               <Instagram className="w-5 h-5 text-ink" />
             </a>
-            <Link
-              to="/admin/login"
-              className="hidden md:flex p-2 hover:bg-sand rounded-full transition-colors"
-              aria-label="Acceso administrador"
-            >
-              <User className="w-5 h-5 text-ink" />
-            </Link>
             <button
               onClick={onCartClick}
               className="relative p-2 hover:bg-sand rounded-full transition-colors"
@@ -140,15 +132,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                     </a>
                   </li>
                 ))}
-                <li>
-                  <Link
-                    to="/admin/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="block font-display text-2xl text-ink hover:text-petit transition-colors"
-                  >
-                    Acceso admin
-                  </Link>
-                </li>
               </ul>
               <a
                 href="https://instagram.com/accesorios.petit"
