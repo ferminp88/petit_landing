@@ -72,8 +72,8 @@ function Store() {
               <span className="block text-[10px] uppercase tracking-[0.25em] font-medium text-mocha">
                 Catálogo
               </span>
-              <h3 className="font-display text-4xl md:text-5xl text-ink leading-tight">
-                Nuestra <em className="italic font-light">colección</em>
+              <h3 className="font-display text-4xl md:text-5xl font-medium text-ink leading-tight">
+                Nuestra colección
               </h3>
               <p className="text-sm text-mocha max-w-md font-light leading-relaxed">
                 Cada pieza es seleccionada pensando en la elegancia y el bienestar de tu mascota.

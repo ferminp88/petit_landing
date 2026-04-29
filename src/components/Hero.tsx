@@ -22,10 +22,10 @@ export const Hero: React.FC = () => {
             Hecho con amor
           </span>
 
-          <h1 className="font-display text-5xl md:text-7xl leading-[1.05] text-ink mb-8">
+          <h1 className="font-display text-5xl md:text-7xl font-medium leading-[1.05] text-ink mb-8 lowercase">
             accesorios para<br />
-            tu <em className="italic font-light">mejor</em><br />
-            <em className="italic font-light">compañía</em>
+            tu mejor<br />
+            compañía
           </h1>
 
           <p className="text-mocha font-light text-base md:text-lg max-w-md mb-10 leading-relaxed">

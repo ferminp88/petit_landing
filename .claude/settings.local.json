@@ -40,7 +40,21 @@
       "Bash(py *)",
       "mcp__ruflo__browser_open",
       "Bash(git remote *)",
-      "Bash(git init *)"
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "Bash(git -C \"D:/Proyectos/Landing_petit\" log --all --oneline -S \"axios\" -- package.json package-lock.json)",
+      "Bash(git -C \"D:/Proyectos/Landing_petit\" log --all --oneline -S \"axios\")",
+      "Bash(npm --version)",
+      "Bash(npm audit *)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);const v=a.vulnerabilities||{};const names=Object.keys\\(v\\);console.log\\('Total vulns:',names.length\\);console.log\\('Metadata:',JSON.stringify\\(a.metadata,null,2\\)\\);const bySev={};for\\(const n of names\\){const sev=v[n].severity;bySev[sev]=bySev[sev]||[];bySev[sev].push\\(n+' \\(via: '+\\(v[n].via||[]\\).map\\(x=>typeof x==='string'?x:x.name\\).join\\(','\\)+'\\)'\\)}console.log\\('By severity:',JSON.stringify\\(bySev,null,2\\)\\)}\\)\")",
+      "Bash(node scripts/audit-deps.mjs)",
+      "Bash(node scripts/audit-upgrade-candidates.mjs)",
+      "Bash(node -e 'console.log\\(require\\('\\\\''./node_modules/__TRACKED_VAR__/package.json'\\\\''\\).version\\)')",
+      "Bash(git config *)",
+      "WebFetch(domain:sundarstore.com)"
     ]
   }
 }

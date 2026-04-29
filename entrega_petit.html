@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Propuesta — Petit Accesorios</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  @page { margin: 15mm 15mm; size: A4; }
+
+  @media print {
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    section { page-break-inside: avoid; }
+  }
+
+  /* PORTADA */
+  .cover {
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff004c 55%, #c8006e 100%);
+    color: white;
+    padding: 70px 55px 55px;
+    border-radius: 0 0 50px 50px;
+    margin-bottom: 50px;
+  }
+  .cover .badge {
+    background: rgba(255,255,255,0.22);
+    display: inline-block;
+    padding: 5px 16px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-size: 46px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+    line-height: 1.1;
+  }
+  .cover .tagline {
+    font-size: 18px;
+    opacity: 0.9;
+    max-width: 500px;
+    font-weight: 400;
+    margin-bottom: 30px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    opacity: 0.6;
+    display: flex;
+    gap: 30px;
+  }
+
+  /* CONTENEDOR */
+  .container { padding: 0 55px 60px; }
+  section { margin-bottom: 44px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #ff004c;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ff004c;
+  }
+
+  h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  p { color: #555; font-size: 15px; margin-bottom: 12px; }
+
+  /* DESTACADO */
+  .highlight {
+    background: linear-gradient(135deg, #fff0f5, #fff8fb);
+    border-left: 5px solid #ff004c;
+    border-radius: 0 16px 16px 0;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .highlight p {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.6;
+  }
+  .highlight strong { color: #ff004c; }
+
+  /* CARDS */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .cards.three { grid-template-columns: repeat(3, 1fr); }
+
+  .card {
+    border: 1.5px solid #f0f0f0;
+    border-radius: 16px;
+    padding: 22px;
+    background: #fafafa;
+    transition: box-shadow 0.2s;
+  }
+  .card .icon { font-size: 28px; margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 800; color: #1a1a2e; margin-bottom: 7px; }
+  .card p { font-size: 14px; color: #666; margin: 0; line-height: 1.55; }
+
+  /* LISTA CHECK */
+  ul.check {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 24px;
+  }
+  ul.check.single { grid-template-columns: 1fr; }
+  ul.check li {
+    font-size: 15px;
+    color: #444;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  ul.check li::before {
+    content: "✓";
+    color: #ff004c;
+    font-weight: 900;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ACCESOS */
+  .url-box {
+    background: #1a1a2e;
+    color: white;
+    border-radius: 12px;
+    padding: 16px 22px;
+    font-size: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+  }
+  .url-box .label {
+    opacity: 0.45;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th {
+    background: #1a1a2e;
+    color: white;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  td { padding: 11px 16px; border-bottom: 1px solid #f0f0f0; color: #555; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafafa; }
+  td strong { color: #1a1a2e; }
+
+  /* NÚMERO GRANDE */
+  .big-number {
+    font-size: 42px;
+    font-weight: 900;
+    color: #ff004c;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    color: #bbb;
+    font-size: 12px;
+  }
+
+  /* BOTÓN IMPRIMIR */
+  .no-print {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 999;
+  }
+  .no-print button {
+    background: #ff004c;
+    color: white;
+    border: none;
+    padding: 15px 26px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(255,0,76,0.35);
+  }
+  .no-print button:hover { background: #cc003d; }
+  .no-print .tip {
+    background: #1a1a2e;
+    color: white;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    max-width: 260px;
+    text-align: right;
+    line-height: 1.5;
+  }
+  .no-print .tip strong { color: #ff6b9d; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 40px;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 16px; color: #1a1a2e; }
+  .modal ol { padding-left: 20px; color: #444; font-size: 15px; line-height: 2; }
+  .modal ol strong { color: #ff004c; }
+  .modal .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  .modal .btn-primary {
+    flex: 1;
+    background: #ff004c;
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal .btn-secondary {
+    flex: 1;
+    background: #f0f0f0;
+    color: #333;
+    border: none;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- Modal instrucciones -->
+<div class="modal-overlay" id="printModal">
+  <div class="modal">
+    <h3>⬇ Guardar como PDF</h3>
+    <ol>
+      <li>Se va a abrir el diálogo de impresión</li>
+      <li>En <strong>Destino</strong> elegí <strong>"Guardar como PDF"</strong></li>
+      <li>Buscá <strong>"Más configuraciones"</strong></li>
+      <li>Desactivá <strong>"Encabezados y pies de página"</strong></li>
+      <li>Hacé clic en <strong>"Guardar"</strong></li>
+    </ol>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="document.getElementById('printModal').classList.remove('show')">Cancelar</button>
+      <button class="btn-primary" onclick="document.getElementById('printModal').classList.remove('show'); window.print()">Entendido, imprimir</button>
+    </div>
+  </div>
+</div>
+
+<div class="no-print">
+  <div class="tip">Acordate de desactivar <strong>"Encabezados y pies de página"</strong> en el diálogo</div>
+  <button onclick="document.getElementById('printModal').classList.add('show')">⬇ Guardar como PDF</button>
+</div>
+
+<!-- PORTADA -->
+<div class="cover">
+  <div class="badge">Propuesta comercial</div>
+  <h1>Tu negocio,<br/>online y listo.</h1>
+  <p class="tagline">Todo lo que necesitás para vender tus accesorios por internet, sin complicaciones.</p>
+  <div class="meta">
+    <span>Petit Accesorios</span>
+    <span>Abril 2026</span>
+    <span>petit-accesorios.duckdns.org</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- INTRODUCCIÓN -->
+  <section>
+    <div class="section-label">El proyecto</div>
+    <h2>¿Qué te estamos entregando?</h2>
+    <div class="highlight">
+      <p>Un sitio web completo para tu negocio de accesorios para mascotas. Tus clientes entran, eligen lo que quieren y el pedido te llega directo por <strong>WhatsApp</strong>. Vos administrás todo desde un panel privado y súper fácil de usar, <strong>desde el celular o la computadora</strong>, sin necesitar ayuda de nadie.</p>
+    </div>
+    <div class="cards three">
+      <div class="card">
+        <div class="icon">🛍️</div>
+        <h3>Tienda online</h3>
+        <p>Tus productos con foto, precio y variantes, disponibles las 24 horas.</p>
+      </div>
+      <div class="card">
+        <div class="icon">💬</div>
+        <h3>Pedidos por WhatsApp</h3>
+        <p>El cliente elige y el pedido completo te llega directo a tu celular.</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚙️</div>
+        <h3>Panel de gestión</h3>
+        <p>Agregás, editás y ocultás productos sin depender de nadie.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- POR QUÉ IMPORTA -->
+  <section>
+    <div class="section-label">Por qué importa tener un sitio web</div>
+    <h2>Tu negocio visible donde están tus clientes</h2>
+    <p>Hoy la mayoría de las personas busca productos en internet antes de comprar. Sin un sitio web, tu negocio es invisible para esos clientes potenciales. Con Petit Accesorios online:</p>
+    <ul class="check" style="margin-top: 14px;">
+      <li>Vendés las 24 horas, incluso cuando dormís</li>
+      <li>Llegás a clientes que no te conocían</li>
+      <li>Transmitís profesionalismo y confianza</li>
+      <li>Tus clientes ven todo el catálogo antes de escribirte</li>
+      <li>Los pedidos llegan ordenados y completos</li>
+      <li>Podés actualizar precios y productos cuando quieras</li>
+    </ul>
+  </section>
+
+  <!-- LA TIENDA -->
+  <section class="page-break">
+    <div class="section-label">La tienda — lo que ven tus clientes</div>
+    <h2>Una experiencia pensada para vender</h2>
+    <p>El sitio está diseñado para que tus clientes naveguen con comodidad desde el celular o la computadora, encuentren lo que buscan y completen su pedido en pocos pasos.</p>
+
+    <div class="cards" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="icon">🐾</div>
+        <h3>Catálogo completo</h3>
+        <p>Todos tus productos con foto de calidad, nombre, descripción y precio. Se actualiza instantáneamente cuando hacés cambios desde el panel.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🏷️</div>
+        <h3>Filtros por categoría</h3>
+        <p>Collares, arneses, accesorios para gatos, juguetes... el cliente filtra y encuentra lo que busca en segundos.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎨</div>
+        <h3>Colores y talles</h3>
+        <p>Cada producto puede tener sus variantes. El cliente elige el color y el talle antes de agregar al carrito.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🛒</div>
+        <h3>Carrito de compras</h3>
+        <p>El cliente acumula varios productos en el carrito, elige cómo va a pagar e ingresa su dirección antes de enviarte el pedido.</p>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p>Cuando el cliente hace clic en <strong>"Finalizar Compra"</strong>, se abre WhatsApp automáticamente con el pedido completo escrito: qué productos, qué variantes, qué cantidad, cómo paga y dónde enviar. Vos solo tenés que confirmar.</p>
+    </div>
+  </section>
+
+  <!-- PANEL ADMIN -->
+  <section>
+    <div class="section-label">El panel — lo que podés hacer vos</div>
+    <h2>Manejá tu catálogo en minutos</h2>
+    <p>Sin necesitar conocimientos técnicos. Entrás con usuario y contraseña y gestionás todo desde ahí.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="icon">➕</div>
+        <h3>Agregar un producto nuevo</h3>
+        <p>Subís la foto desde tu celular, escribís el nombre, el precio y las variantes. Listo, ya aparece en la tienda.</p>
+      </div>
+      <div class="card">
+        <div class="icon">✏️</div>
+        <h3>Cambiar precio o descripción</h3>
+        <p>¿Actualizaste el precio? Lo cambiás en segundos y el cliente ya ve el nuevo precio al instante.</p>
+      </div>
+      <div class="card">
+        <div class="icon">👁️</div>
+        <h3>Ocultar si no hay stock</h3>
+        <p>Si te quedás sin stock de algo, lo ocultás de la tienda con un clic. Cuando vuelve, lo reactivás igual de fácil.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🗑️</div>
+        <h3>Eliminar lo que ya no vendés</h3>
+        <p>Borrás definitivamente cualquier producto que ya no forme parte de tu catálogo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEGURIDAD -->
+  <section>
+    <div class="section-label">Seguridad y confianza</div>
+    <h2>Tu sitio y tus clientes están protegidos</h2>
+    <ul class="check single">
+      <li>El sitio tiene candado HTTPS — la conexión es segura y cifrada</li>
+      <li>El panel admin solo es accesible con usuario y contraseña</li>
+      <li>Si alguien intenta adivinar la contraseña, queda bloqueado automáticamente</li>
+      <li>La sesión de admin vence a las 24 horas por seguridad</li>
+      <li>El sitio está publicado en un servidor dedicado, sin interrupciones</li>
+    </ul>
+  </section>
+
+  <!-- ACCESOS -->
+  <section class="page-break">
+    <div class="section-label">Tus accesos</div>
+    <h2>Todo lo que necesitás para empezar</h2>
+    <div class="url-box">
+      <div>https://petit-accesorios.duckdns.org</div>
+      <div class="label">Tu tienda</div>
+    </div>
+    <div class="url-box">
+      <div>https://petit-accesorios.duckdns.org/admin</div>
+      <div class="label">Panel admin</div>
+    </div>
+    <br/>
+    <table>
+      <thead><tr><th>Dato</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Usuario admin</strong></td><td>admin</td></tr>
+        <tr><td><strong>Contraseña admin</strong></td><td>Petit2024!</td></tr>
+        <tr><td><strong>Seguridad</strong></td><td>HTTPS activo — candado verde en el navegador</td></tr>
+        <tr><td><strong>Disponibilidad</strong></td><td>24 horas al día, 7 días a la semana</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TODO INCLUIDO -->
+  <section>
+    <div class="section-label">Resumen de lo entregado</div>
+    <h2>Todo esto viene incluido</h2>
+    <ul class="check">
+      <li>Sitio web publicado y en línea</li>
+      <li>Dominio con candado HTTPS</li>
+      <li>Diseño adaptado a celular y computadora</li>
+      <li>Logo de la marca en el sitio</li>
+      <li>13 productos de ejemplo cargados</li>
+      <li>Catálogo con filtros por categoría</li>
+      <li>Carrito de compras funcional</li>
+      <li>Pedidos directos por WhatsApp</li>
+      <li>Soporte de variantes (color y talle)</li>
+      <li>Panel de administración privado</li>
+      <li>Actualizaciones automáticas ante cualquier cambio</li>
+      <li>Protección contra intentos de hackeo</li>
+    </ul>
+  </section>
+
+  <!-- PRÓXIMOS PASOS -->
+  <section>
+    <div class="section-label">Siguientes pasos posibles</div>
+    <h2>Tu negocio puede seguir creciendo</h2>
+    <p>Estas son algunas mejoras que se pueden agregar más adelante:</p>
+    <ul class="check single">
+      <li>Dominio propio personalizado — ej: petitaccesorios.com.ar</li>
+      <li>Pago online con Mercado Pago integrado directamente en el sitio</li>
+      <li>Múltiples fotos por producto con galería</li>
+      <li>Sistema de descuentos y cupones promocionales</li>
+      <li>Estadísticas de visitas para entender qué productos gustan más</li>
+      <li>Sección de reseñas de clientes</li>
+    </ul>
+  </section>
+
+  <div class="footer">
+    <p>Petit Accesorios · petit-accesorios.duckdns.org · Abril 2026</p>
+  </div>
+
+</div>
+</body>
+</html>
