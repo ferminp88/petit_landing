@@ -52,6 +52,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
+app.use('/api', require('./routes/public'));
 app.use('/api/admin', require('./routes/admin'));
 
 if (process.env.NODE_ENV === 'production') {
