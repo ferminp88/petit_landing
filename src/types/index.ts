@@ -2,6 +2,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  compareAtPrice: number | null;
   description: string;
   image: string;
   images: string[];
@@ -30,6 +31,7 @@ export interface RawProduct {
   name: string;
   description: string;
   price: number;
+  compare_at_price: number | null;
   category: string;
   image: string;
   images: string;
