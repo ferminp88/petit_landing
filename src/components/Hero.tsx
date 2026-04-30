@@ -2,7 +2,11 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 
-export const Hero: React.FC = () => {
+interface HeroProps {
+  featuredImage?: string;
+}
+
+export const Hero: React.FC<HeroProps> = ({ featuredImage }) => {
   return (
     <section className="bg-bone py-10 md:py-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-ink min-h-[420px] md:min-h-[480px] shadow-xl">
@@ -42,14 +46,6 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.15 }}
           className="relative bg-sand min-h-[280px] md:min-h-full overflow-hidden flex items-center justify-center p-8 md:p-12"
         >
-          <img
-            src="/hero-product.jpg"
-            alt=""
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            className="absolute inset-0 w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-
           <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-gradient opacity-30 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-12 -left-12 w-52 h-52 rounded-full bg-brand-orange/30 blur-2xl pointer-events-none" />
 
@@ -58,9 +54,20 @@ export const Hero: React.FC = () => {
               ✦ Novedades
             </span>
 
-            <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full bg-white/70 backdrop-blur shadow-2xl flex items-center justify-center mb-5 border border-white/60">
-              <span className="font-display font-bold text-7xl md:text-8xl text-gradient leading-none">P</span>
-              <span className="absolute -top-3 -right-3 px-3 py-1.5 rounded-full bg-gradient text-white text-xs font-bold shadow-lg rotate-12">
+            <div className="relative w-52 h-52 md:w-64 md:h-64 rounded-full bg-white shadow-2xl mb-5 border border-white/60 overflow-hidden">
+              {featuredImage ? (
+                <img
+                  src={featuredImage}
+                  alt="Producto destacado"
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-display font-bold text-7xl md:text-8xl text-gradient leading-none">P</span>
+                </div>
+              )}
+              <span className="absolute -top-2 -right-2 px-3 py-1.5 rounded-full bg-gradient text-white text-xs font-bold shadow-lg rotate-12">
                 -20%
               </span>
             </div>
