@@ -122,13 +122,18 @@ export function AdminPromotion() {
   const previewSrc = newPreview || (showCurrentImage ? resolveImage(currentImage) : '');
 
   return (
-    <AdminShell title="Novedades">
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-5 md:p-8 max-w-3xl mx-auto space-y-6">
-        <div>
-          <h2 className="font-bold text-slate-800 mb-1">Banner de Novedades</h2>
-          <p className="text-xs text-slate-500">
-            Esta promoción se muestra en el panel derecho del Hero. Para que aparezca tenés que activarla con el switch de abajo.
-          </p>
+    <AdminShell title="Novedades" subtitle="Banner promocional del Hero">
+      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 md:p-8 max-w-3xl mx-auto space-y-6 shadow-sm">
+        <div className="flex items-start gap-3 pb-2">
+          <span className="w-10 h-10 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
+            <Upload className="w-5 h-5" />
+          </span>
+          <div>
+            <h2 className="font-display font-bold text-lg text-slate-900">Banner de Novedades</h2>
+            <p className="text-xs text-slate-500">
+              Se muestra en el panel derecho del Hero. Activá el switch al final para que aparezca.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -156,7 +161,7 @@ export function AdminPromotion() {
             ) : (
               <div
                 onClick={() => fileRef.current?.click()}
-                className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-pink-300 transition-colors text-slate-400"
+                className="aspect-square border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-pink-300 transition-colors text-slate-400"
               >
                 <Upload className="w-8 h-8 mb-2 opacity-50" />
                 <p className="text-sm font-medium">Subir foto</p>
@@ -186,7 +191,7 @@ export function AdminPromotion() {
                 rows={3}
                 maxLength={500}
                 placeholder="Ej: 20% off en este producto"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 resize-none"
+                className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:border-pink-400 resize-none"
               />
             </div>
 
@@ -201,7 +206,7 @@ export function AdminPromotion() {
                   onChange={e => setOldPrice(e.target.value)}
                   min="0"
                   placeholder="6000"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:border-pink-400"
                 />
               </div>
               <div>
@@ -214,7 +219,7 @@ export function AdminPromotion() {
                   onChange={e => setNewPrice(e.target.value)}
                   min="0"
                   placeholder="4800"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:border-pink-400"
                 />
               </div>
             </div>
