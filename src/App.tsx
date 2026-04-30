@@ -10,6 +10,9 @@ import { Filters, PRICE_RANGES } from './components/Filters';
 import { AdminLogin } from './admin/AdminLogin';
 import { AdminProducts } from './admin/AdminProducts';
 import { AdminProductForm } from './admin/AdminProductForm';
+import { AdminCategories } from './admin/AdminCategories';
+import { AdminSizes } from './admin/AdminSizes';
+import { AdminPromotion } from './admin/AdminPromotion';
 import { fetchProducts } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -198,6 +201,9 @@ export default function App() {
       <Route path="/admin/products" element={<AdminGuard><AdminProducts /></AdminGuard>} />
       <Route path="/admin/products/new" element={<AdminGuard><AdminProductForm /></AdminGuard>} />
       <Route path="/admin/products/:id/edit" element={<AdminGuard><AdminProductForm /></AdminGuard>} />
+      <Route path="/admin/categories" element={<AdminGuard><AdminCategories /></AdminGuard>} />
+      <Route path="/admin/sizes" element={<AdminGuard><AdminSizes /></AdminGuard>} />
+      <Route path="/admin/promotion" element={<AdminGuard><AdminPromotion /></AdminGuard>} />
     </Routes>
   );
 }
