@@ -40,7 +40,7 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.15 }}
-          className="relative bg-sand min-h-[280px] md:min-h-full overflow-hidden"
+          className="relative bg-sand min-h-[280px] md:min-h-full overflow-hidden flex items-center justify-center p-8 md:p-12"
         >
           <img
             src="/hero-product.jpg"
@@ -49,6 +49,29 @@ export const Hero: React.FC = () => {
             className="absolute inset-0 w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
+
+          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-gradient opacity-30 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-52 h-52 rounded-full bg-brand-orange/30 blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 w-full max-w-sm flex flex-col items-center text-center">
+            <span className="px-3 py-1 rounded-full bg-white/80 backdrop-blur text-[10px] uppercase tracking-[0.22em] font-bold text-brand-magenta mb-5 shadow-sm">
+              ✦ Novedades
+            </span>
+
+            <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full bg-white/70 backdrop-blur shadow-2xl flex items-center justify-center mb-5 border border-white/60">
+              <span className="font-display font-bold text-7xl md:text-8xl text-gradient leading-none">P</span>
+              <span className="absolute -top-3 -right-3 px-3 py-1.5 rounded-full bg-gradient text-white text-xs font-bold shadow-lg rotate-12">
+                -20%
+              </span>
+            </div>
+
+            <p className="font-display font-bold text-2xl md:text-3xl text-ink leading-tight mb-2">
+              Colección primavera
+            </p>
+            <p className="text-sm text-ink/60 font-light max-w-[260px]">
+              Hasta 20% de descuento en accesorios seleccionados.
+            </p>
+          </div>
         </motion.div>
       </div>
     </section>
