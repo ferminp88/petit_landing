@@ -54,7 +54,8 @@
       "Bash(node scripts/audit-upgrade-candidates.mjs)",
       "Bash(node -e 'console.log\\(require\\('\\\\''./node_modules/__TRACKED_VAR__/package.json'\\\\''\\).version\\)')",
       "Bash(git config *)",
-      "WebFetch(domain:sundarstore.com)"
+      "WebFetch(domain:sundarstore.com)",
+      "mcp__21st-magic__21st_magic_component_inspiration"
     ]
   }
 }

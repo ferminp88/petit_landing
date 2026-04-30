@@ -15,53 +15,100 @@ import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
 const POPULAR_PALETTES = [
-  'bg-pink-100 text-pink-700',
-  'bg-amber-100 text-amber-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-violet-100 text-violet-700',
-  'bg-orange-100 text-orange-700',
-  'bg-sky-100 text-sky-700',
+  'from-pink-100 to-pink-200',
+  'from-amber-100 to-amber-200',
+  'from-emerald-100 to-emerald-200',
+  'from-violet-100 to-violet-200',
+  'from-orange-100 to-orange-200',
+  'from-sky-100 to-sky-200',
+  'from-rose-100 to-rose-200',
+  'from-lime-100 to-lime-200',
 ];
 
 interface PopularCategoriesProps {
+  products: Product[];
   categories: string[];
   activeCategory: string;
   onSelect: (category: string) => void;
 }
 
-function PopularCategories({ categories, activeCategory, onSelect }: PopularCategoriesProps) {
+function PopularCategories({ products, categories, activeCategory, onSelect }: PopularCategoriesProps) {
   if (categories.length === 0) return null;
-  const items = ['Todos', ...categories].slice(0, 6);
+
+  const items = useMemo(() => {
+    const all = ['Todos', ...categories];
+    return all.map(cat => {
+      const sample = cat === 'Todos'
+        ? products[0]
+        : products.find(p => p.category === cat);
+      const count = cat === 'Todos'
+        ? products.length
+        : products.filter(p => p.category === cat).length;
+      return { cat, image: sample?.image, count };
+    });
+  }, [products, categories]);
+
   return (
-    <section className="max-w-7xl mx-auto px-4 pt-4 pb-2">
-      <div className="mb-6">
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">Lo más popular</h2>
+    <section className="w-full pt-6 pb-4">
+      <div className="max-w-7xl mx-auto px-4 mb-6 flex items-end justify-between gap-4">
+        <div>
+          <span className="block text-[10px] uppercase tracking-[0.25em] font-bold text-mocha mb-1">
+            Categorías
+          </span>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">Lo más popular</h2>
+        </div>
+        {activeCategory !== 'Todos' && (
+          <button
+            onClick={() => onSelect('Todos')}
+            className="text-[11px] uppercase tracking-[0.18em] font-bold text-brand-magenta hover:underline"
+          >
+            Ver todo →
+          </button>
+        )}
       </div>
-      <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide">
-        {items.map((cat, i) => {
-          const isActive = activeCategory === cat || (cat === 'Todos' && activeCategory === 'Todos');
-          const palette = POPULAR_PALETTES[i % POPULAR_PALETTES.length];
-          return (
-            <button
-              key={cat}
-              onClick={() => onSelect(cat)}
-              className="group flex flex-col items-center gap-2 flex-shrink-0"
-            >
-              <div
-                className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-2xl md:text-3xl font-display font-bold transition-all ${palette} ${
+
+      <div className="relative">
+        <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-bone to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-bone to-transparent z-10" />
+
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 px-4 md:px-8 snap-x snap-mandatory scrollbar-hide">
+          {items.map(({ cat, image, count }, i) => {
+            const isActive = activeCategory === cat;
+            const palette = POPULAR_PALETTES[i % POPULAR_PALETTES.length];
+            return (
+              <button
+                key={cat}
+                onClick={() => onSelect(cat)}
+                className={`group relative flex-shrink-0 snap-start w-36 md:w-44 rounded-3xl overflow-hidden transition-all duration-300 ${
                   isActive
-                    ? 'ring-4 ring-brand-magenta/40 scale-105'
-                    : 'group-hover:scale-105 group-hover:shadow-md'
+                    ? 'ring-2 ring-brand-magenta shadow-lg shadow-brand-magenta/20 scale-[1.02]'
+                    : 'hover:shadow-lg hover:-translate-y-0.5'
                 }`}
               >
-                {cat.charAt(0).toUpperCase()}
-              </div>
-              <span className={`text-xs font-bold ${isActive ? 'text-brand-magenta' : 'text-ink'}`}>
-                {cat}
-              </span>
-            </button>
-          );
-        })}
+                <div className={`bg-gradient-to-br ${palette} aspect-square flex items-center justify-center p-4 relative`}>
+                  {image ? (
+                    <img
+                      src={image}
+                      alt={cat}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="font-display font-bold text-5xl text-white/80">
+                      {cat.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/80 backdrop-blur text-[10px] font-bold text-ink shadow-sm">
+                    {count}
+                  </span>
+                </div>
+                <div className={`px-3 py-3 text-center ${isActive ? 'bg-gradient text-white' : 'bg-white text-ink'}`}>
+                  <p className="font-display font-bold text-sm leading-tight truncate">{cat}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -120,6 +167,7 @@ function Store() {
       <main className="flex-grow">
         <Hero />
         <PopularCategories
+          products={products}
           categories={categories}
           activeCategory={category}
           onSelect={(c) => {
