@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, LogOut, X, Star } from 'lucide-react';
-import { adminCreateProduct, adminUpdateProduct, adminFetchProducts } from './adminApi';
+import { ArrowLeft, Upload, X, Star } from 'lucide-react';
+import {
+  adminCreateProduct, adminUpdateProduct, adminFetchProducts,
+  adminFetchCategories, adminFetchSizes,
+  AdminCategory, AdminSize,
+} from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
+import { AdminShell } from './AdminShell';
 
 const MAX_IMAGES = 10;
 
@@ -24,13 +29,27 @@ export function AdminProductForm() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    name: '', description: '', price: '', category: '', color_options: '', size_options: '',
+    name: '', description: '', price: '', compare_at_price: '', category: '', color_options: '',
   });
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
+  const [allSizes, setAllSizes] = useState<AdminSize[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFilePreviews, setNewFilePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([adminFetchCategories(), adminFetchSizes()])
+      .then(([cats, sizes]) => {
+        setAllCategories(cats);
+        setAllSizes(sizes);
+      })
+      .catch((err: any) => {
+        if (err.message === 'UNAUTHORIZED') { logout(); navigate('/admin/login'); }
+      });
+  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -41,10 +60,12 @@ export function AdminProductForm() {
         name: product.name,
         description: product.description || '',
         price: String(product.price),
+        compare_at_price: product.compare_at_price !== null && product.compare_at_price !== undefined ? String(product.compare_at_price) : '',
         category: product.category || '',
         color_options: product.color_options || '',
-        size_options: product.size_options || '',
       });
+      const existingSizes = String(product.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
+      setSelectedSizes(existingSizes);
       const imgs = parseImagesJSON(product.images);
       if (imgs.length > 0) setExistingImages(imgs);
       else if (product.image) setExistingImages([product.image]);
@@ -56,6 +77,13 @@ export function AdminProductForm() {
       newFilePreviews.forEach(url => URL.revokeObjectURL(url));
     };
   }, [newFilePreviews]);
+
+  const percentOff = useMemo(() => {
+    const price = parseInt(form.price);
+    const compareAt = parseInt(form.compare_at_price);
+    if (!isFinite(price) || !isFinite(compareAt) || compareAt <= 0 || price >= compareAt) return null;
+    return Math.round((1 - price / compareAt) * 100);
+  }, [form.price, form.compare_at_price]);
 
   function addFiles(files: FileList | File[]) {
     const arr = Array.from(files);
@@ -90,6 +118,10 @@ export function AdminProductForm() {
     setExistingImages(prev => [url, ...prev.filter(u => u !== url)]);
   }
 
+  function toggleSize(name: string) {
+    setSelectedSizes(prev => prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]);
+  }
+
   const totalImages = existingImages.length + newFiles.length;
   const canAddMore = totalImages < MAX_IMAGES;
 
@@ -97,6 +129,7 @@ export function AdminProductForm() {
     e.preventDefault();
     if (!form.name.trim()) { setError('El nombre es requerido'); return; }
     if (!form.price || isNaN(Number(form.price))) { setError('El precio debe ser un número'); return; }
+    if (form.compare_at_price && isNaN(Number(form.compare_at_price))) { setError('El precio anterior debe ser un número'); return; }
 
     setError('');
     setLoading(true);
@@ -105,9 +138,10 @@ export function AdminProductForm() {
     formData.append('name', form.name.trim());
     formData.append('description', form.description.trim());
     formData.append('price', form.price);
+    formData.append('compare_at_price', form.compare_at_price || '');
     formData.append('category', form.category.trim());
     formData.append('color_options', form.color_options.trim());
-    formData.append('size_options', form.size_options.trim());
+    formData.append('size_options', selectedSizes.join(', '));
     formData.append('existing_images', JSON.stringify(existingImages));
     for (const file of newFiles) formData.append('images', file);
 
@@ -126,179 +160,207 @@ export function AdminProductForm() {
     }
   }
 
+  const backAction = (
+    <button onClick={() => navigate('/admin/products')} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
+      <ArrowLeft className="w-5 h-5" />
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <AdminShell title={isEdit ? 'Editar Producto' : 'Nuevo Producto'} actions={backAction}>
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200 p-5 md:p-8 space-y-5">
 
-      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/admin/products')} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="font-bold text-base text-white">{isEdit ? 'Editar Producto' : 'Nuevo Producto'}</span>
-        </div>
-        <button
-          onClick={() => { logout(); navigate('/admin/login'); }}
-          className="p-2 text-slate-400 hover:text-white transition-colors"
-          title="Salir"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
-      </header>
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Fotos del Producto ({totalImages}/{MAX_IMAGES})
+            </label>
+            <span className="text-[10px] text-slate-400">La primera es la principal</span>
+          </div>
 
-      <div className="flex-1 p-4 md:p-7">
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200 p-5 md:p-8 space-y-5">
-
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Fotos del Producto ({totalImages}/{MAX_IMAGES})
-              </label>
-              <span className="text-[10px] text-slate-400">La primera es la principal</span>
-            </div>
-
-            {totalImages > 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
-                {existingImages.map((url, i) => (
-                  <div key={`ex-${url}`} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
-                    <img src={url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    {i === 0 && (
-                      <span className="absolute top-1 left-1 bg-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Principal</span>
+          {totalImages > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+              {existingImages.map((url, i) => (
+                <div key={`ex-${url}`} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
+                  <img src={url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  {i === 0 && (
+                    <span className="absolute top-1 left-1 bg-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Principal</span>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                    {i !== 0 && (
+                      <button type="button" onClick={() => makeExistingFirst(url)} className="p-1.5 bg-white rounded-lg hover:bg-pink-50" title="Hacer principal">
+                        <Star className="w-3.5 h-3.5 text-pink-500" />
+                      </button>
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
-                      {i !== 0 && (
-                        <button type="button" onClick={() => makeExistingFirst(url)} className="p-1.5 bg-white rounded-lg hover:bg-pink-50" title="Hacer principal">
-                          <Star className="w-3.5 h-3.5 text-pink-500" />
-                        </button>
-                      )}
-                      <button type="button" onClick={() => removeExisting(url)} className="p-1.5 bg-white rounded-lg hover:bg-red-50" title="Eliminar">
-                        <X className="w-3.5 h-3.5 text-red-500" />
-                      </button>
-                    </div>
+                    <button type="button" onClick={() => removeExisting(url)} className="p-1.5 bg-white rounded-lg hover:bg-red-50" title="Eliminar">
+                      <X className="w-3.5 h-3.5 text-red-500" />
+                    </button>
                   </div>
-                ))}
-                {newFilePreviews.map((url, i) => (
-                  <div key={`new-${i}`} className="relative group aspect-square rounded-xl overflow-hidden border-2 border-pink-200">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <span className="absolute top-1 left-1 bg-pink-100 text-pink-600 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Nueva</span>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <button type="button" onClick={() => removeNewFile(i)} className="p-1.5 bg-white rounded-lg hover:bg-red-50" title="Descartar">
-                        <X className="w-3.5 h-3.5 text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {canAddMore && (
-              <div
-                className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center cursor-pointer hover:border-pink-300 transition-colors"
-                onClick={() => fileRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={e => e.preventDefault()}
-              >
-                <div className="text-slate-400">
-                  <Upload className="w-7 h-7 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">{totalImages === 0 ? 'Tocá para subir fotos' : 'Agregar más fotos'}</p>
-                  <p className="text-xs mt-1 opacity-70">JPG, PNG, WEBP — máx. 5MB c/u — hasta {MAX_IMAGES} fotos</p>
                 </div>
+              ))}
+              {newFilePreviews.map((url, i) => (
+                <div key={`new-${i}`} className="relative group aspect-square rounded-xl overflow-hidden border-2 border-pink-200">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <span className="absolute top-1 left-1 bg-pink-100 text-pink-600 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Nueva</span>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <button type="button" onClick={() => removeNewFile(i)} className="p-1.5 bg-white rounded-lg hover:bg-red-50" title="Descartar">
+                      <X className="w-3.5 h-3.5 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {canAddMore && (
+            <div
+              className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center cursor-pointer hover:border-pink-300 transition-colors"
+              onClick={() => fileRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={e => e.preventDefault()}
+            >
+              <div className="text-slate-400">
+                <Upload className="w-7 h-7 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">{totalImages === 0 ? 'Tocá para subir fotos' : 'Agregar más fotos'}</p>
+                <p className="text-xs mt-1 opacity-70">JPG, PNG, WEBP — máx. 5MB c/u — hasta {MAX_IMAGES} fotos</p>
               </div>
-            )}
-
-            <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={handleImageChange} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Nombre *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                placeholder="Ej: Collar de Cuero"
-              />
             </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Precio ($) *</label>
-              <input
-                type="number"
-                value={form.price}
-                onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                placeholder="4500"
-                min="0"
-              />
-            </div>
-          </div>
+          )}
 
+          <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={handleImageChange} />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Nombre *</label>
+          <input
+            type="text"
+            value={form.name}
+            onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+            placeholder="Ej: Collar de Cuero"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Categoría</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Precio actual ($) *</label>
             <input
-              type="text"
-              value={form.category}
-              onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+              type="number"
+              value={form.price}
+              onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
               className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-              placeholder="Ej: Collares"
+              placeholder="4500"
+              min="0"
             />
           </div>
-
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Descripción</label>
-            <textarea
-              value={form.description}
-              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              rows={3}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 resize-none"
-              placeholder="Describí el producto..."
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Precio anterior ($)</label>
+            <input
+              type="number"
+              value={form.compare_at_price}
+              onChange={e => setForm(p => ({ ...p, compare_at_price: e.target.value }))}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+              placeholder="6000 (opcional)"
+              min="0"
             />
+            {percentOff !== null && (
+              <p className="text-[11px] font-bold text-pink-600 mt-1.5">−{percentOff}% OFF</p>
+            )}
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Colores (opcional)</label>
-              <input
-                type="text"
-                value={form.color_options}
-                onChange={e => setForm(p => ({ ...p, color_options: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                placeholder="Marrón, Negro, Natural"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Categoría</label>
+          <select
+            value={form.category}
+            onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 bg-white"
+          >
+            <option value="">— Sin categoría —</option>
+            {allCategories.map(c => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+          {allCategories.length === 0 && (
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              Aún no hay categorías. Creá la primera en <button type="button" onClick={() => navigate('/admin/categories')} className="text-pink-500 underline">Categorías</button>.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Descripción</label>
+          <textarea
+            value={form.description}
+            onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+            rows={3}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400 resize-none"
+            placeholder="Describí el producto..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Colores (opcional)</label>
+          <input
+            type="text"
+            value={form.color_options}
+            onChange={e => setForm(p => ({ ...p, color_options: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
+            placeholder="Marrón, Negro, Natural"
+          />
+          <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+            Talles (opcional) {selectedSizes.length > 0 && <span className="text-pink-500">— {selectedSizes.length} seleccionado{selectedSizes.length === 1 ? '' : 's'}</span>}
+          </label>
+          {allSizes.length === 0 ? (
+            <p className="text-[11px] text-slate-400">
+              Aún no hay talles. Creá los primeros en <button type="button" onClick={() => navigate('/admin/sizes')} className="text-pink-500 underline">Talles</button>.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {allSizes.map(s => {
+                const isSelected = selectedSizes.includes(s.name);
+                return (
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => toggleSize(s.name)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      isSelected
+                        ? 'bg-pink-500 text-white border-pink-500'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-pink-300'
+                    }`}
+                  >
+                    {s.name}
+                  </button>
+                );
+              })}
             </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Talles (opcional)</label>
-              <input
-                type="text"
-                value={form.size_options}
-                onChange={e => setForm(p => ({ ...p, size_options: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
-                placeholder="S, M, L, XL"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
-            </div>
-          </div>
+          )}
+        </div>
 
-          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+        {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/products')}
-              className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-[2] py-3 bg-gradient text-white rounded-xl text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Crear Producto'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/admin/products')}
+            className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-[2] py-3 bg-gradient text-white rounded-xl text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50"
+          >
+            {loading ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Crear Producto'}
+          </button>
+        </div>
+      </form>
+    </AdminShell>
   );
 }

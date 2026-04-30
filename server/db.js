@@ -25,6 +25,9 @@ const cols = db.prepare("PRAGMA table_info(products)").all();
 if (!cols.some(c => c.name === 'images')) {
   db.exec("ALTER TABLE products ADD COLUMN images TEXT DEFAULT '[]'");
 }
+if (!cols.some(c => c.name === 'compare_at_price')) {
+  db.exec("ALTER TABLE products ADD COLUMN compare_at_price INTEGER");
+}
 
 const backfillRows = db.prepare(
   "SELECT id, image FROM products WHERE (images IS NULL OR images = '' OR images = '[]') AND image != ''"
@@ -44,6 +47,39 @@ db.exec(`
     applied_at TEXT DEFAULT (datetime('now'))
   )
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sizes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS promotion (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    image TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    old_price INTEGER,
+    new_price INTEGER,
+    active INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+const promoExists = db.prepare("SELECT 1 FROM promotion WHERE id = 1").get();
+if (!promoExists) {
+  db.prepare(`INSERT INTO promotion (id, image, description, active) VALUES (1, '', '', 0)`).run();
+}
 
 function parseImagesJSON(val) {
   if (!val) return [];
@@ -114,6 +150,32 @@ const insertIfNotExists = db.prepare(`
 
 for (const p of seedProducts) {
   insertIfNotExists.run(...p, p[0]);
+}
+
+// Seed categorías y talles desde productos existentes (idempotente vía UNIQUE)
+const SEED_CATSIZE_VERSION = 1;
+const seedCatSizeRow = db.prepare("SELECT value FROM migrations WHERE key = 'seed_categories_sizes'").get();
+if (!seedCatSizeRow || seedCatSizeRow.value < SEED_CATSIZE_VERSION) {
+  const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+  const insertSize = db.prepare('INSERT OR IGNORE INTO sizes (name) VALUES (?)');
+  const markMigStmt = db.prepare(
+    "INSERT OR REPLACE INTO migrations (key, value, applied_at) VALUES ('seed_categories_sizes', ?, datetime('now'))"
+  );
+  const seedTx = db.transaction(() => {
+    const productsAll = db.prepare("SELECT category, size_options FROM products").all();
+    const catSet = new Set();
+    const sizeSet = new Set();
+    for (const p of productsAll) {
+      const cat = (p.category || '').trim();
+      if (cat) catSet.add(cat);
+      const sizes = String(p.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
+      for (const s of sizes) sizeSet.add(s);
+    }
+    for (const c of catSet) insertCat.run(c);
+    for (const s of sizeSet) insertSize.run(s);
+    markMigStmt.run(SEED_CATSIZE_VERSION);
+  });
+  seedTx();
 }
 
 module.exports = db;

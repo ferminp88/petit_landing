@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Power, LogOut, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power } from 'lucide-react';
 import { adminFetchProducts, adminDeleteProduct, adminToggleProduct } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { RawProduct } from '../types';
+import { AdminShell } from './AdminShell';
 
 export function AdminProducts() {
   const { logout } = useAdminAuth();
@@ -51,36 +52,19 @@ export function AdminProducts() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const paginated = products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const newProductButton = (
+    <button
+      onClick={() => navigate('/admin/products/new')}
+      className="flex items-center gap-1.5 bg-pink-500 text-white px-3 py-2 rounded-xl text-sm font-bold hover:bg-pink-600 transition-colors"
+    >
+      <Plus className="w-4 h-4" />
+      <span className="hidden sm:inline">Nuevo Producto</span>
+      <span className="sm:hidden">Nuevo</span>
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-
-      {/* TOP NAV */}
-      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <Package className="w-5 h-5 text-pink-400" />
-          <span className="font-display font-bold text-pink-400 tracking-widest text-lg">PETIT</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/admin/products/new')}
-            className="flex items-center gap-1.5 bg-pink-500 text-white px-3 py-2 rounded-xl text-sm font-bold hover:bg-pink-600 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo Producto</span>
-            <span className="sm:hidden">Nuevo</span>
-          </button>
-          <button
-            onClick={() => { logout(); navigate('/admin/login'); }}
-            className="p-2 text-slate-400 hover:text-white transition-colors"
-            title="Salir"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="flex-1 p-4 md:p-7 max-w-5xl mx-auto w-full">
-
+    <AdminShell title="Productos" actions={newProductButton}>
         {/* STATS */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
@@ -224,7 +208,6 @@ export function AdminProducts() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </AdminShell>
   );
 }

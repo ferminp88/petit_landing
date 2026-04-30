@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShoppingBag, Instagram, Menu } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShoppingCart, Instagram, Menu, X, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -7,51 +7,158 @@ interface NavbarProps {
   onCartClick: () => void;
 }
 
+type NavLink = { label: string; targetId: string };
+const NAV_LINKS: NavLink[] = [
+  { label: 'Productos', targetId: 'products' },
+  { label: 'Sobre Petit', targetId: 'about' },
+  { label: 'Contacto', targetId: 'contact' },
+];
+
 export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
-  const { totalItems } = useCart();
+  const { totalItems, totalPrice } = useCart();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/50 backdrop-blur-md border-b border-brand-accent/10">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button className="p-2 hover:bg-brand-beige/20 rounded-full transition-colors md:hidden">
-            <Menu className="w-5 h-5" />
-          </button>
-          <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <img
-              src="/logo.png"
-              alt="Petit Logo"
-              className="h-14 w-auto cursor-pointer"
-            />
-          </a>
-          <a href="https://instagram.com/accesorios.petit" target="_blank" rel="noreferrer" className="hidden md:flex p-2 hover:bg-brand-beige/20 rounded-full transition-colors">
-            <Instagram className="w-5 h-5" />
-          </a>
-        </div>
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient text-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2 -ml-2 hover:bg-white/15 rounded-full transition-colors md:hidden"
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5 text-white" />
+            </button>
+            <a
+              href="#"
+              onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="flex-shrink-0 bg-white rounded-full p-1.5 shadow-sm"
+            >
+              <img src="/logo.png" alt="Petit" className="h-9 w-auto" />
+            </a>
+          </div>
 
-        <div />
-
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onCartClick}
-            className="relative p-2 hover:bg-black/5 rounded-full transition-colors group"
-          >
-            <ShoppingBag className="w-6 h-6 text-brand-dark" />
-            <AnimatePresence>
-              {totalItems > 0 && (
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 bg-gradient text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm"
+          <ul className="hidden md:flex items-center gap-7">
+            {NAV_LINKS.map(link => (
+              <li key={link.targetId}>
+                <a
+                  href={`#${link.targetId}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-xs uppercase tracking-[0.18em] font-bold text-white/90 hover:text-white transition-colors"
                 >
-                  {totalItems}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden md:flex flex-1 max-w-sm relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+            <input
+              type="search"
+              placeholder="Buscar productos..."
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/15 placeholder:text-white/60 text-white text-sm focus:outline-none focus:bg-white/25 transition-colors"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <a
+              href="https://instagram.com/accesorios.petit"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden md:flex p-2 hover:bg-white/15 rounded-full transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="w-5 h-5 text-white" />
+            </a>
+            <button
+              onClick={onCartClick}
+              className="flex items-center gap-2 pl-2 pr-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-full transition-colors"
+              aria-label="Carrito"
+            >
+              <span className="relative">
+                <ShoppingCart className="w-5 h-5 text-white" />
+                <AnimatePresence>
+                  {totalItems > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1.5 -right-1.5 bg-white text-brand-magenta text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold"
+                    >
+                      {totalItems}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </span>
+              <span className="hidden sm:inline text-xs font-bold text-white">
+                ${totalPrice.toLocaleString('es-AR')}
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-[55] bg-ink/30 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="fixed top-0 left-0 bottom-0 z-[60] w-[80%] max-w-xs bg-bone p-8 md:hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-12">
+                <img src="/logo.png" alt="Petit" className="h-10 w-auto" />
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 hover:bg-sand rounded-full transition-colors"
+                  aria-label="Cerrar menú"
+                >
+                  <X className="w-5 h-5 text-ink" />
+                </button>
+              </div>
+              <ul className="space-y-6">
+                {NAV_LINKS.map(link => (
+                  <li key={link.targetId}>
+                    <a
+                      href={`#${link.targetId}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setMobileOpen(false);
+                        document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="block font-display text-2xl text-ink hover:text-petit transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="https://instagram.com/accesorios.petit"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-auto inline-flex items-center gap-2 text-mocha hover:text-petit transition-colors text-xs uppercase tracking-[0.22em]"
+              >
+                <Instagram className="w-4 h-4" /> Instagram
+              </a>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };

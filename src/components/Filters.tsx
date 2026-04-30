@@ -39,14 +39,14 @@ function Dropdown({ label, isActive, value, displayValue, options, onChange }: D
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[11px] font-medium uppercase tracking-[0.18em] transition-colors border ${
           isActive
-            ? 'bg-gradient text-white shadow-md shadow-brand-pink/20'
-            : 'bg-black/5 text-brand-dark/70 hover:bg-black/10'
+            ? 'bg-ink text-bone border-ink'
+            : 'bg-transparent text-ink/70 border-mocha/25 hover:border-ink hover:text-ink'
         }`}
       >
-        <span className={`uppercase tracking-wider text-[10px] ${isActive ? 'opacity-80' : 'opacity-60'}`}>{label}</span>
-        <span className="font-bold max-w-[120px] truncate">{displayValue}</span>
+        <span className="opacity-70">{label}</span>
+        <span className="font-medium max-w-[120px] truncate">{displayValue}</span>
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
@@ -56,19 +56,19 @@ function Dropdown({ label, isActive, value, displayValue, options, onChange }: D
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 min-w-[180px] bg-white rounded-xl shadow-xl border border-black/5 overflow-hidden z-30"
+            className="absolute top-full right-0 mt-2 min-w-[200px] bg-bone border border-mocha/15 overflow-hidden z-30"
           >
             {options.map(opt => (
               <button
                 key={opt.id}
                 type="button"
                 onClick={() => { onChange(opt.id); setOpen(false); }}
-                className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold text-left transition-colors ${
-                  value === opt.id ? 'bg-brand-pink/10 text-brand-magenta' : 'text-brand-dark/70 hover:bg-black/5'
+                className={`w-full flex items-center justify-between px-4 py-2.5 text-[11px] uppercase tracking-[0.18em] text-left transition-colors ${
+                  value === opt.id ? 'bg-sand text-ink font-medium' : 'text-ink/70 hover:bg-sand/60'
                 }`}
               >
                 <span>{opt.label}</span>
-                {value === opt.id && <Check className="w-3.5 h-3.5" />}
+                {value === opt.id && <Check className="w-3.5 h-3.5 text-mocha" />}
               </button>
             ))}
           </motion.div>
@@ -139,7 +139,7 @@ export function Filters(props: FiltersProps) {
         <button
           type="button"
           onClick={onClear}
-          className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] uppercase tracking-wider font-bold text-brand-dark/50 hover:text-brand-dark hover:bg-black/5 transition-all"
+          className="flex items-center gap-1.5 px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] font-medium text-mocha hover:text-ink transition-colors"
         >
           <X className="w-3 h-3" />
           Limpiar

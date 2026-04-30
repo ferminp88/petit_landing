@@ -70,6 +70,13 @@ router.get('/products', (req, res) => {
   res.json(products);
 });
 
+function parseCompareAtPrice(val) {
+  if (val === undefined || val === null || val === '') return null;
+  const n = parseInt(val);
+  if (isNaN(n) || n < 0) return null;
+  return n;
+}
+
 router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
   const name = sanitizeStr(req.body.name, 200);
   const description = sanitizeStr(req.body.description, 1000);
@@ -77,6 +84,7 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   const color_options = sanitizeStr(req.body.color_options, 300);
   const size_options = sanitizeStr(req.body.size_options, 300);
   const price = parseInt(req.body.price);
+  const compare_at_price = parseCompareAtPrice(req.body.compare_at_price);
 
   if (!name || isNaN(price) || price < 0) {
     return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
@@ -87,9 +95,9 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   const image = images[0] || '';
 
   const result = db.prepare(`
-    INSERT INTO products (name, description, price, category, image, images, color_options, size_options)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options);
+    INSERT INTO products (name, description, price, category, image, images, color_options, size_options, compare_at_price)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options, compare_at_price);
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(product);
@@ -107,6 +115,9 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
   const color_options = req.body.color_options !== undefined ? sanitizeStr(req.body.color_options, 300) : existing.color_options;
   const size_options = req.body.size_options !== undefined ? sanitizeStr(req.body.size_options, 300) : existing.size_options;
   const price = req.body.price ? parseInt(req.body.price) : existing.price;
+  const compare_at_price = req.body.compare_at_price !== undefined
+    ? parseCompareAtPrice(req.body.compare_at_price)
+    : existing.compare_at_price;
 
   if (isNaN(price) || price < 0) return res.status(400).json({ error: 'Precio inválido' });
 
@@ -122,9 +133,9 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
   const image = finalImages[0] || '';
 
   db.prepare(`
-    UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?
+    UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?, compare_at_price=?
     WHERE id=?
-  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, req.params.id);
+  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, compare_at_price, req.params.id);
 
   res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
 });
@@ -152,6 +163,86 @@ router.patch('/products/:id/toggle', (req, res) => {
   const newActive = existing.active === 1 ? 0 : 1;
   db.prepare('UPDATE products SET active = ? WHERE id = ?').run(newActive, req.params.id);
   res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
+});
+
+// === CATEGORÍAS ===
+router.get('/categories', (req, res) => {
+  res.json(db.prepare('SELECT * FROM categories ORDER BY name COLLATE NOCASE').all());
+});
+
+router.post('/categories', (req, res) => {
+  const name = sanitizeStr(req.body.name, 100);
+  if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+  try {
+    const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(name);
+    res.status(201).json(db.prepare('SELECT * FROM categories WHERE id = ?').get(result.lastInsertRowid));
+  } catch (e) {
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Esa categoría ya existe' });
+    throw e;
+  }
+});
+
+router.delete('/categories/:id', (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// === TALLES ===
+router.get('/sizes', (req, res) => {
+  res.json(db.prepare('SELECT * FROM sizes ORDER BY name COLLATE NOCASE').all());
+});
+
+router.post('/sizes', (req, res) => {
+  const name = sanitizeStr(req.body.name, 50);
+  if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+  try {
+    const result = db.prepare('INSERT INTO sizes (name) VALUES (?)').run(name);
+    res.status(201).json(db.prepare('SELECT * FROM sizes WHERE id = ?').get(result.lastInsertRowid));
+  } catch (e) {
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Ese talle ya existe' });
+    throw e;
+  }
+});
+
+router.delete('/sizes/:id', (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  db.prepare('DELETE FROM sizes WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// === PROMOCIÓN (single row) ===
+router.get('/promotion', (req, res) => {
+  const row = db.prepare('SELECT * FROM promotion WHERE id = 1').get();
+  res.json(row || { id: 1, image: '', description: '', old_price: null, new_price: null, active: 0 });
+});
+
+router.put('/promotion', upload.single('image'), (req, res) => {
+  const description = sanitizeStr(req.body.description, 500);
+  const old_price = parseCompareAtPrice(req.body.old_price);
+  const new_price = parseCompareAtPrice(req.body.new_price);
+  const active = req.body.active === '1' || req.body.active === 'true' || req.body.active === true ? 1 : 0;
+
+  const existing = db.prepare('SELECT * FROM promotion WHERE id = 1').get();
+  let image = existing?.image || '';
+
+  // Si se quiere borrar la imagen sin subir una nueva
+  if (req.body.clear_image === '1' && !req.file) {
+    deleteLocalUpload(image);
+    image = '';
+  }
+
+  if (req.file) {
+    deleteLocalUpload(image);
+    image = `/uploads/${req.file.filename}`;
+  }
+
+  db.prepare(`
+    UPDATE promotion SET image=?, description=?, old_price=?, new_price=?, active=?, updated_at=datetime('now')
+    WHERE id = 1
+  `).run(image, description, old_price, new_price, active);
+
+  res.json(db.prepare('SELECT * FROM promotion WHERE id = 1').get());
 });
 
 module.exports = router;

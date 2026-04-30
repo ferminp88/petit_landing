@@ -6,7 +6,7 @@ export const generateWhatsAppLink = (
   cart: CartItem[], 
   totalPrice: number, 
   paymentMethod: PaymentMethod,
-  userData: { name: string; address: string }
+  userData: { name: string; address: string; dogWeight: string }
 ) => {
   const itemsText = cart.map(item => {
     const variants = Object.entries(item.selectedVariants)
@@ -24,7 +24,8 @@ Total: $${totalPrice}
 Método de pago: ${paymentMethod}
 
 Nombre: ${userData.name}
-Dirección de envío: ${userData.address}`;
+Dirección de envío: ${userData.address}
+Peso del perro: ${userData.dogWeight} kg`;
 
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 };
