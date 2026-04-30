@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Product } from '../types';
 import { motion } from 'motion/react';
+import { Heart, Star } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -8,6 +9,8 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  const [liked, setLiked] = useState(false);
+
   const images = useMemo(() => {
     if (product.images?.length) return product.images;
     if (product.image) return [product.image];
@@ -18,6 +21,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
   const primary = images[0];
   const secondary = hasSecond ? images[1] : undefined;
 
+  const sizeOptions = product.variants?.find(v => v.type === 'size')?.options ?? [];
+
+  // Pseudo-random "Nuevo" badge based on id (decorativo, estable por producto)
+  const isNew = useMemo(() => {
+    const hash = String(product.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    return hash % 5 === 0;
+  }, [product.id]);
+
   return (
     <motion.div
       layout
@@ -25,15 +36,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="group cursor-pointer"
+      className="group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col"
       onClick={onClick}
     >
-      <div className="relative aspect-square overflow-hidden bg-sand mb-4">
+      <div className="relative aspect-square overflow-hidden bg-bone">
         {primary && (
           <img
             src={primary}
             alt={product.name}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${hasSecond ? 'group-hover:opacity-0' : ''}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${hasSecond ? 'group-hover:opacity-0' : ''}`}
             referrerPolicy="no-referrer"
           />
         )}
@@ -41,36 +52,66 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
           <img
             src={secondary}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
             referrerPolicy="no-referrer"
           />
         )}
+
+        {isNew && (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-gradient text-white text-[10px] uppercase tracking-wider font-bold shadow-md">
+            Nuevo
+          </span>
+        )}
+
         <button
-          onClick={(e) => { e.stopPropagation(); onClick(); }}
-          className="hidden md:block absolute left-4 right-4 bottom-4 py-3 bg-ink text-bone text-[10px] uppercase tracking-[0.25em] font-medium translate-y-[110%] group-hover:translate-y-0 transition-transform duration-400"
+          onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center hover:bg-white transition-colors"
+          aria-label="Favorito"
         >
-          Ver producto
+          <Heart className={`w-4 h-4 transition-colors ${liked ? 'fill-brand-magenta text-brand-magenta' : 'text-ink/60'}`} />
         </button>
       </div>
 
-      <div className="px-1 space-y-1">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-mocha">
+      <div className="p-4 flex-1 flex flex-col gap-2">
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha">
           {product.category}
         </p>
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="font-display text-base text-ink leading-snug">
-            {product.name}
-          </h3>
-          <span className="font-sans font-medium text-sm text-ink whitespace-nowrap">
+
+        <h3 className="font-display font-semibold text-base text-ink leading-snug line-clamp-2">
+          {product.name}
+        </h3>
+
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Star
+              key={i}
+              className={`w-3 h-3 ${i <= 4 ? 'fill-amber-400 text-amber-400' : 'fill-mocha/20 text-mocha/20'}`}
+            />
+          ))}
+          <span className="text-[10px] text-mocha ml-1">(4.0)</span>
+        </div>
+
+        {sizeOptions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {sizeOptions.slice(0, 4).map(s => (
+              <span key={s} className="px-2 py-0.5 rounded-full bg-bone text-[10px] font-bold text-mocha border border-mocha/15">
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-auto pt-3 flex items-center justify-between">
+          <span className="font-display font-bold text-lg text-brand-magenta">
             ${product.price.toLocaleString('es-AR')}
           </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            className="px-3 py-1.5 rounded-full bg-gradient text-white text-[10px] uppercase tracking-wider font-bold hover:brightness-110 transition-all shadow-sm"
+          >
+            Ver
+          </button>
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); onClick(); }}
-          className="md:hidden mt-2 w-full py-2.5 border border-mocha/25 text-ink text-[10px] uppercase tracking-[0.22em] font-medium hover:bg-ink hover:text-bone hover:border-ink transition-colors"
-        >
-          Ver producto
-        </button>
       </div>
     </motion.div>
   );

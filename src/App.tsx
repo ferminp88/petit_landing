@@ -14,6 +14,59 @@ import { fetchProducts } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
+const POPULAR_PALETTES = [
+  'bg-pink-100 text-pink-700',
+  'bg-amber-100 text-amber-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-violet-100 text-violet-700',
+  'bg-orange-100 text-orange-700',
+  'bg-sky-100 text-sky-700',
+];
+
+interface PopularCategoriesProps {
+  categories: string[];
+  activeCategory: string;
+  onSelect: (category: string) => void;
+}
+
+function PopularCategories({ categories, activeCategory, onSelect }: PopularCategoriesProps) {
+  if (categories.length === 0) return null;
+  const items = ['Todos', ...categories].slice(0, 6);
+  return (
+    <section className="max-w-7xl mx-auto px-4 pt-4 pb-2">
+      <div className="mb-6">
+        <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">Lo más popular</h2>
+      </div>
+      <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide">
+        {items.map((cat, i) => {
+          const isActive = activeCategory === cat || (cat === 'Todos' && activeCategory === 'Todos');
+          const palette = POPULAR_PALETTES[i % POPULAR_PALETTES.length];
+          return (
+            <button
+              key={cat}
+              onClick={() => onSelect(cat)}
+              className="group flex flex-col items-center gap-2 flex-shrink-0"
+            >
+              <div
+                className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-2xl md:text-3xl font-display font-bold transition-all ${palette} ${
+                  isActive
+                    ? 'ring-4 ring-brand-magenta/40 scale-105'
+                    : 'group-hover:scale-105 group-hover:shadow-md'
+                }`}
+              >
+                {cat.charAt(0).toUpperCase()}
+              </div>
+              <span className={`text-xs font-bold ${isActive ? 'text-brand-magenta' : 'text-ink'}`}>
+                {cat}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function Store() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +119,15 @@ function Store() {
       <Navbar onCartClick={() => setIsCartOpen(true)} />
       <main className="flex-grow">
         <Hero />
-        <section id="products" className="max-w-7xl mx-auto px-4 py-20">
+        <PopularCategories
+          categories={categories}
+          activeCategory={category}
+          onSelect={(c) => {
+            setCategory(c);
+            document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+        <section id="products" className="max-w-7xl mx-auto px-4 py-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
             <div className="max-w-lg space-y-3">
               <span className="block text-[10px] uppercase tracking-[0.25em] font-medium text-mocha">

@@ -188,7 +188,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 </div>
                 <button
                   onClick={handleCheckout}
-                  className="w-full h-12 bg-petit text-bone flex items-center justify-center font-medium tracking-[0.22em] text-[11px] uppercase hover:brightness-95 transition-all"
+                  className="w-full h-12 bg-gradient text-white rounded-full flex items-center justify-center font-bold tracking-wide text-sm hover:brightness-110 transition-all shadow-lg shadow-brand-magenta/25"
                 >
                   Finalizar por WhatsApp
                 </button>
