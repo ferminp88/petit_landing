@@ -23,11 +23,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
 
   const sizeOptions = product.variants?.find(v => v.type === 'size')?.options ?? [];
 
-  // Pseudo-random "Nuevo" badge based on id (decorativo, estable por producto)
-  const isNew = useMemo(() => {
-    const hash = String(product.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-    return hash % 5 === 0;
-  }, [product.id]);
+  const hasDiscount = product.compareAtPrice !== null && product.compareAtPrice > product.price;
+  const percentOff = hasDiscount
+    ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -57,9 +56,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
           />
         )}
 
-        {isNew && (
+        {hasDiscount && (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-gradient text-white text-[10px] uppercase tracking-wider font-bold shadow-md">
-            Nuevo
+            −{percentOff}%
           </span>
         )}
 
@@ -102,9 +101,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
         )}
 
         <div className="mt-auto pt-3 flex items-center justify-between">
-          <span className="font-display font-bold text-lg text-brand-magenta">
-            ${product.price.toLocaleString('es-AR')}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-bold text-lg text-brand-magenta">
+              ${product.price.toLocaleString('es-AR')}
+            </span>
+            {hasDiscount && (
+              <span className="text-xs font-medium text-mocha line-through">
+                ${(product.compareAtPrice as number).toLocaleString('es-AR')}
+              </span>
+            )}
+          </div>
           <button
             onClick={(e) => { e.stopPropagation(); onClick(); }}
             className="px-3 py-1.5 rounded-full bg-gradient text-white text-[10px] uppercase tracking-wider font-bold hover:brightness-110 transition-all shadow-sm"

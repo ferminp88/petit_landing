@@ -165,9 +165,29 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 <span className="text-xs text-mocha ml-2">(4.0) · 12 reseñas</span>
               </div>
 
-              <p className="font-display font-bold text-3xl text-brand-magenta mb-6">
-                ${product.price.toLocaleString('es-AR')}
-              </p>
+              {(() => {
+                const hasDiscount = product.compareAtPrice !== null && product.compareAtPrice > product.price;
+                const percentOff = hasDiscount
+                  ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
+                  : 0;
+                return (
+                  <div className="flex items-baseline gap-3 mb-6 flex-wrap">
+                    <p className="font-display font-bold text-3xl text-brand-magenta">
+                      ${product.price.toLocaleString('es-AR')}
+                    </p>
+                    {hasDiscount && (
+                      <>
+                        <p className="text-base font-medium text-mocha line-through">
+                          ${(product.compareAtPrice as number).toLocaleString('es-AR')}
+                        </p>
+                        <span className="px-2 py-0.5 rounded-full bg-gradient text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                          −{percentOff}% OFF
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               <p className="text-ink/70 mb-6 leading-relaxed font-light text-sm">
                 {product.description}

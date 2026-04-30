@@ -107,7 +107,7 @@ function Store() {
     <div className="min-h-screen flex flex-col pt-16">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
       <main className="flex-grow">
-        <Hero featuredImage={products[0]?.image} />
+        <Hero fallbackImage={products[0]?.image} />
         <FeaturedProducts
           products={products}
           onSelect={setSelectedProduct}

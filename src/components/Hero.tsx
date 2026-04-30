@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { fetchPromotion, PromotionData } from '../lib/api';
 
 interface HeroProps {
-  featuredImage?: string;
+  fallbackImage?: string;
 }
 
-export const Hero: React.FC<HeroProps> = ({ featuredImage }) => {
+export const Hero: React.FC<HeroProps> = ({ fallbackImage }) => {
+  const [promo, setPromo] = useState<PromotionData | null>(null);
+
+  useEffect(() => {
+    fetchPromotion().then(setPromo).catch(() => setPromo(null));
+  }, []);
+
+  const showPromo = promo && (promo.image || promo.description);
+  const heroImage = promo?.image || fallbackImage || '';
+
+  const percentOff = (promo?.oldPrice && promo?.newPrice && promo.oldPrice > promo.newPrice)
+    ? Math.round((1 - promo.newPrice / promo.oldPrice) * 100)
+    : null;
+
   return (
     <section className="bg-bone py-10 md:py-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-ink min-h-[420px] md:min-h-[480px] shadow-xl">
@@ -55,10 +69,10 @@ export const Hero: React.FC<HeroProps> = ({ featuredImage }) => {
             </span>
 
             <div className="relative w-52 h-52 md:w-64 md:h-64 rounded-full bg-white shadow-2xl mb-5 border border-white/60 overflow-hidden">
-              {featuredImage ? (
+              {heroImage ? (
                 <img
-                  src={featuredImage}
-                  alt="Producto destacado"
+                  src={heroImage}
+                  alt={promo?.description || 'Producto destacado'}
                   referrerPolicy="no-referrer"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
@@ -67,17 +81,43 @@ export const Hero: React.FC<HeroProps> = ({ featuredImage }) => {
                   <span className="font-display font-bold text-7xl md:text-8xl text-gradient leading-none">P</span>
                 </div>
               )}
-              <span className="absolute -top-2 -right-2 px-3 py-1.5 rounded-full bg-gradient text-white text-xs font-bold shadow-lg rotate-12">
-                -20%
-              </span>
+              {percentOff !== null && (
+                <span className="absolute -top-2 -right-2 px-3 py-1.5 rounded-full bg-gradient text-white text-xs font-bold shadow-lg rotate-12">
+                  −{percentOff}%
+                </span>
+              )}
             </div>
 
-            <p className="font-display font-bold text-2xl md:text-3xl text-ink leading-tight mb-2">
-              Colección primavera
-            </p>
-            <p className="text-sm text-ink/60 font-light max-w-[260px]">
-              Hasta 20% de descuento en accesorios seleccionados.
-            </p>
+            {showPromo ? (
+              <>
+                {promo?.description && (
+                  <p className="font-display font-bold text-xl md:text-2xl text-ink leading-tight mb-3 max-w-[280px]">
+                    {promo.description}
+                  </p>
+                )}
+                {promo?.newPrice !== null && promo?.newPrice !== undefined && (
+                  <div className="flex items-baseline gap-2 justify-center">
+                    {promo.oldPrice !== null && promo.oldPrice > (promo.newPrice ?? 0) && (
+                      <span className="text-base text-ink/40 line-through font-medium">
+                        ${promo.oldPrice.toLocaleString('es-AR')}
+                      </span>
+                    )}
+                    <span className="font-display font-bold text-3xl md:text-4xl text-brand-magenta">
+                      ${promo.newPrice.toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="font-display font-bold text-2xl md:text-3xl text-ink leading-tight mb-2">
+                  Colección primavera
+                </p>
+                <p className="text-sm text-ink/60 font-light max-w-[260px]">
+                  Configurá tu promoción desde el panel de admin.
+                </p>
+              </>
+            )}
           </div>
         </motion.div>
       </div>

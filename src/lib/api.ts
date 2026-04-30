@@ -35,10 +35,31 @@ function mapProduct(raw: RawProduct): Product {
     name: raw.name,
     description: raw.description,
     price: raw.price,
+    compareAtPrice: raw.compare_at_price ?? null,
     category: raw.category,
     image: images[0] ?? '',
     images,
     variants: variants.length > 0 ? variants : undefined,
+  };
+}
+
+export interface PromotionData {
+  image: string;
+  description: string;
+  oldPrice: number | null;
+  newPrice: number | null;
+}
+
+export async function fetchPromotion(): Promise<PromotionData | null> {
+  const res = await fetch(`${API_BASE}/api/promotion`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data) return null;
+  return {
+    image: data.image ? resolveUrl(data.image) : '',
+    description: data.description || '',
+    oldPrice: data.old_price ?? null,
+    newPrice: data.new_price ?? null,
   };
 }
 
