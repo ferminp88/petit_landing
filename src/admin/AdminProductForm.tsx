@@ -161,14 +161,14 @@ export function AdminProductForm() {
   }
 
   const backAction = (
-    <button onClick={() => navigate('/admin/products')} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
+    <button onClick={() => navigate('/admin/products')} className="p-2 hover:bg-white rounded-xl transition-colors text-slate-600">
       <ArrowLeft className="w-5 h-5" />
     </button>
   );
 
   return (
-    <AdminShell title={isEdit ? 'Editar Producto' : 'Nuevo Producto'} actions={backAction}>
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200 p-5 md:p-8 space-y-5">
+    <AdminShell title={isEdit ? 'Editar producto' : 'Nuevo producto'} subtitle={isEdit ? 'Actualizá los datos del producto' : 'Cargá un nuevo producto al catálogo'} actions={backAction}>
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 space-y-5 shadow-sm">
 
         <div>
           <div className="flex items-center justify-between mb-3">
