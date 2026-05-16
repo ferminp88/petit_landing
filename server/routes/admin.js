@@ -77,6 +77,10 @@ function parseCompareAtPrice(val) {
   return n;
 }
 
+function parseBool01(val) {
+  return val === '1' || val === 1 || val === 'true' || val === true ? 1 : 0;
+}
+
 router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
   const name = sanitizeStr(req.body.name, 200);
   const description = sanitizeStr(req.body.description, 1000);
@@ -85,6 +89,8 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   const size_options = sanitizeStr(req.body.size_options, 300);
   const price = parseInt(req.body.price);
   const compare_at_price = parseCompareAtPrice(req.body.compare_at_price);
+  const is_new = parseBool01(req.body.is_new);
+  const is_best_seller = parseBool01(req.body.is_best_seller);
 
   if (!name || isNaN(price) || price < 0) {
     return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
@@ -95,9 +101,9 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   const image = images[0] || '';
 
   const result = db.prepare(`
-    INSERT INTO products (name, description, price, category, image, images, color_options, size_options, compare_at_price)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options, compare_at_price);
+    INSERT INTO products (name, description, price, category, image, images, color_options, size_options, compare_at_price, is_new, is_best_seller)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options, compare_at_price, is_new, is_best_seller);
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(product);
@@ -118,6 +124,8 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
   const compare_at_price = req.body.compare_at_price !== undefined
     ? parseCompareAtPrice(req.body.compare_at_price)
     : existing.compare_at_price;
+  const is_new = req.body.is_new !== undefined ? parseBool01(req.body.is_new) : existing.is_new;
+  const is_best_seller = req.body.is_best_seller !== undefined ? parseBool01(req.body.is_best_seller) : existing.is_best_seller;
 
   if (isNaN(price) || price < 0) return res.status(400).json({ error: 'Precio inválido' });
 
@@ -133,9 +141,9 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
   const image = finalImages[0] || '';
 
   db.prepare(`
-    UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?, compare_at_price=?
+    UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?, compare_at_price=?, is_new=?, is_best_seller=?
     WHERE id=?
-  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, compare_at_price, req.params.id);
+  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, compare_at_price, is_new, is_best_seller, req.params.id);
 
   res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
 });

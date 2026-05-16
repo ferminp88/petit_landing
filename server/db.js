@@ -28,6 +28,12 @@ if (!cols.some(c => c.name === 'images')) {
 if (!cols.some(c => c.name === 'compare_at_price')) {
   db.exec("ALTER TABLE products ADD COLUMN compare_at_price INTEGER");
 }
+if (!cols.some(c => c.name === 'is_new')) {
+  db.exec("ALTER TABLE products ADD COLUMN is_new INTEGER DEFAULT 0");
+}
+if (!cols.some(c => c.name === 'is_best_seller')) {
+  db.exec("ALTER TABLE products ADD COLUMN is_best_seller INTEGER DEFAULT 0");
+}
 
 const backfillRows = db.prepare(
   "SELECT id, image FROM products WHERE (images IS NULL OR images = '' OR images = '[]') AND image != ''"

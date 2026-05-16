@@ -11,6 +11,8 @@ export interface Product {
     type: 'color' | 'size';
     options: string[];
   }[];
+  isNew?: boolean;
+  isBestSeller?: boolean;
 }
 
 export interface CartItem extends Product {
@@ -38,5 +40,7 @@ export interface RawProduct {
   color_options: string;
   size_options: string;
   active: number;
+  is_new?: number;
+  is_best_seller?: number;
   created_at: string;
 }

@@ -108,8 +108,16 @@ export function AdminProducts() {
                       className="w-12 h-12 object-cover rounded-xl"
                       referrerPolicy="no-referrer"
                     />
-                    <div>
-                      <div className="font-bold text-sm text-slate-800 truncate">{product.name}</div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className="font-bold text-sm text-slate-800 truncate">{product.name}</div>
+                        {product.is_new === 1 && (
+                          <span className="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-700 text-[9px] font-bold uppercase tracking-wider">Nuevo</span>
+                        )}
+                        {product.is_best_seller === 1 && (
+                          <span className="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wider">Top</span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{product.category}</div>
                     </div>
                     <span className="text-sm text-slate-600">{product.category}</span>
@@ -153,6 +161,16 @@ export function AdminProducts() {
                           {product.active ? 'Activo' : 'Oculto'}
                         </span>
                       </div>
+                      {(product.is_new === 1 || product.is_best_seller === 1) && (
+                        <div className="flex gap-1 mb-1">
+                          {product.is_new === 1 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-700 text-[9px] font-bold uppercase tracking-wider">Nuevo</span>
+                          )}
+                          {product.is_best_seller === 1 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wider">Top</span>
+                          )}
+                        </div>
+                      )}
                       <p className="text-xs text-slate-400 mb-2">{product.category} · <span className="font-display font-bold text-pink-600">${product.price.toLocaleString('es-AR')}</span></p>
                       <div className="flex gap-2">
                         <button onClick={() => navigate(`/admin/products/${product.id}/edit`)} className="flex-1 py-1.5 bg-sky-50 text-sky-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1">

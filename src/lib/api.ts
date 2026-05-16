@@ -40,6 +40,8 @@ function mapProduct(raw: RawProduct): Product {
     image: images[0] ?? '',
     images,
     variants: variants.length > 0 ? variants : undefined,
+    isNew: raw.is_new === 1,
+    isBestSeller: raw.is_best_seller === 1,
   };
 }
 

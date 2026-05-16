@@ -32,6 +32,8 @@ export function AdminProductForm() {
     name: '', description: '', price: '', compare_at_price: '', category: '', color_options: '',
   });
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [isNew, setIsNew] = useState(false);
+  const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
   const [allSizes, setAllSizes] = useState<AdminSize[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -66,6 +68,8 @@ export function AdminProductForm() {
       });
       const existingSizes = String(product.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
       setSelectedSizes(existingSizes);
+      setIsNew(product.is_new === 1);
+      setIsBestSeller(product.is_best_seller === 1);
       const imgs = parseImagesJSON(product.images);
       if (imgs.length > 0) setExistingImages(imgs);
       else if (product.image) setExistingImages([product.image]);
@@ -142,6 +146,8 @@ export function AdminProductForm() {
     formData.append('category', form.category.trim());
     formData.append('color_options', form.color_options.trim());
     formData.append('size_options', selectedSizes.join(', '));
+    formData.append('is_new', isNew ? '1' : '0');
+    formData.append('is_best_seller', isBestSeller ? '1' : '0');
     formData.append('existing_images', JSON.stringify(existingImages));
     for (const file of newFiles) formData.append('images', file);
 
@@ -340,6 +346,35 @@ export function AdminProductForm() {
               })}
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Distintivos</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() => setIsNew(v => !v)}
+              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                isNew
+                  ? 'bg-sky-500 text-white border-sky-500'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-sky-300'
+              }`}
+            >
+              {isNew ? '✓ ' : ''}Marcar como Nuevo
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBestSeller(v => !v)}
+              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                isBestSeller
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'
+              }`}
+            >
+              {isBestSeller ? '✓ ' : ''}Marcar como Más vendido
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-1.5">Se muestran como badges en la card del producto.</p>
         </div>
 
         {error && <p className="text-sm text-red-500 font-medium">{error}</p>}

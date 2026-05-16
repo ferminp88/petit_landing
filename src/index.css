@@ -23,6 +23,25 @@
   --color-brand-magenta: #f400cf;
   --color-brand-pink: #ff004c;
   --color-brand-orange: #ff7b00;
+
+  /* shadcn/ui semantic tokens (mapeados a paleta Petit) */
+  --color-background: #F5F1EA;
+  --color-foreground: #1A1A1A;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1A1A1A;
+  --color-primary: #E8689F;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #E8DFD3;
+  --color-secondary-foreground: #1A1A1A;
+  --color-muted: #E8DFD3;
+  --color-muted-foreground: #6B5B4E;
+  --color-accent: #E8DFD3;
+  --color-accent-foreground: #1A1A1A;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #E8DFD3;
+  --color-input: #E8DFD3;
+  --color-ring: #E8689F;
 }
 
 @layer base {
