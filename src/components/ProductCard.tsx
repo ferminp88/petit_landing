@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Heart, Star, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { Product } from '../types';
 import { Card, CardContent, CardFooter } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
@@ -19,10 +19,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
   }, [product.images, product.image]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [liked, setLiked] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  const sizeOptions = product.variants?.find(v => v.type === 'size')?.options ?? [];
 
   const hasDiscount = product.compareAtPrice !== null && product.compareAtPrice > product.price;
   const percentOff = hasDiscount
@@ -121,18 +117,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
             )}
           </div>
 
-          {/* Wishlist */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className={`absolute top-3 right-3 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm ${
-              liked ? 'text-brand-magenta' : ''
-            }`}
-            onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
-            aria-label="Favorito"
-          >
-            <Heart className={`h-4 w-4 ${liked ? 'fill-brand-magenta' : ''}`} />
-          </Button>
         </div>
 
         {/* Content */}
@@ -166,27 +150,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
               )}
             </div>
 
-            {/* Sizes */}
-            {sizeOptions.length > 0 && (
-              <div className="space-y-1.5">
-                <div className="text-xs text-muted-foreground">Talles</div>
-                <div className="flex flex-wrap gap-2">
-                  {sizeOptions.map(size => (
-                    <button
-                      key={size}
-                      className={`min-w-[2.5rem] h-8 px-2 rounded-md text-xs font-bold transition-all ${
-                        selectedSize === size
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted/60 hover:bg-muted text-mocha'
-                      }`}
-                      onClick={(e) => { e.stopPropagation(); setSelectedSize(size); }}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
 
