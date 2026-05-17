@@ -95,3 +95,39 @@ export async function adminFetchPromotion(): Promise<AdminPromotion> {
 export async function adminUpdatePromotion(formData: FormData): Promise<AdminPromotion> {
   return jsonRequest<AdminPromotion>('/api/admin/promotion', { method: 'PUT', body: formData });
 }
+
+// === Banners ===
+export type BannerType = 'category' | 'promo';
+
+export interface AdminBanner {
+  id: number;
+  type: BannerType;
+  title: string;
+  subtitle: string;
+  image: string;
+  link: string;
+  position: number;
+  active: number;
+  created_at: string;
+}
+
+export async function adminFetchBanners(type?: BannerType): Promise<AdminBanner[]> {
+  const qs = type ? `?type=${type}` : '';
+  return jsonRequest<AdminBanner[]>(`/api/admin/banners${qs}`);
+}
+
+export async function adminCreateBanner(formData: FormData): Promise<AdminBanner> {
+  return jsonRequest<AdminBanner>('/api/admin/banners', { method: 'POST', body: formData });
+}
+
+export async function adminUpdateBanner(id: number, formData: FormData): Promise<AdminBanner> {
+  return jsonRequest<AdminBanner>(`/api/admin/banners/${id}`, { method: 'PUT', body: formData });
+}
+
+export async function adminToggleBanner(id: number): Promise<AdminBanner> {
+  return jsonRequest<AdminBanner>(`/api/admin/banners/${id}/toggle`, { method: 'PATCH' });
+}
+
+export async function adminDeleteBanner(id: number): Promise<void> {
+  await jsonRequest(`/api/admin/banners/${id}`, { method: 'DELETE' });
+}

@@ -71,6 +71,20 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS banners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK (type IN ('category', 'promo')),
+    title TEXT DEFAULT '',
+    subtitle TEXT DEFAULT '',
+    image TEXT DEFAULT '',
+    link TEXT DEFAULT '',
+    position INTEGER DEFAULT 0,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS promotion (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     image TEXT DEFAULT '',

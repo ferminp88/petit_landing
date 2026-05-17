@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Package, Tag, Ruler, Megaphone, Menu, X, Sparkles, ExternalLink } from 'lucide-react';
+import { LogOut, Package, Tag, Ruler, Megaphone, Menu, X, Sparkles, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
-type NavColor = 'magenta' | 'orange' | 'sky' | 'violet';
+type NavColor = 'magenta' | 'orange' | 'sky' | 'violet' | 'emerald';
 
 interface NavItem {
   to: string;
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/categories', label: 'Categorías', icon: Tag, color: 'orange' },
   { to: '/admin/sizes', label: 'Talles', icon: Ruler, color: 'sky' },
   { to: '/admin/promotion', label: 'Novedades', icon: Megaphone, color: 'violet' },
+  { to: '/admin/banners', label: 'Banners', icon: ImageIcon, color: 'emerald' },
 ];
 
 const COLOR_STYLES: Record<NavColor, { active: string; inactive: string; iconBg: string; iconText: string }> = {
@@ -43,6 +44,12 @@ const COLOR_STYLES: Record<NavColor, { active: string; inactive: string; iconBg:
     inactive: 'text-slate-600 hover:bg-violet-50/50 hover:text-violet-700',
     iconBg: 'bg-violet-100',
     iconText: 'text-violet-600',
+  },
+  emerald: {
+    active: 'bg-emerald-50 text-emerald-700',
+    inactive: 'text-slate-600 hover:bg-emerald-50/50 hover:text-emerald-700',
+    iconBg: 'bg-emerald-100',
+    iconText: 'text-emerald-600',
   },
 };
 

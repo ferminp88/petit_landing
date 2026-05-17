@@ -72,6 +72,33 @@ export async function fetchProducts(): Promise<Product[]> {
   return data.map(mapProduct);
 }
 
+export interface PublicBanner {
+  id: number;
+  type: 'category' | 'promo';
+  title: string;
+  subtitle: string;
+  image: string;
+  link: string;
+}
+
+export async function fetchBanners(): Promise<{ categories: PublicBanner[]; promos: PublicBanner[] }> {
+  const res = await fetch(`${API_BASE}/api/banners`);
+  if (!res.ok) return { categories: [], promos: [] };
+  const data = await res.json();
+  const mapBanner = (b: any): PublicBanner => ({
+    id: b.id,
+    type: b.type,
+    title: b.title || '',
+    subtitle: b.subtitle || '',
+    image: b.image ? resolveUrl(b.image) : '',
+    link: b.link || '',
+  });
+  return {
+    categories: Array.isArray(data?.categories) ? data.categories.map(mapBanner) : [],
+    promos: Array.isArray(data?.promos) ? data.promos.map(mapBanner) : [],
+  };
+}
+
 export async function fetchProduct(id: string): Promise<Product> {
   const res = await fetch(`${API_BASE}/api/products/${id}`);
   if (!res.ok) throw new Error('Producto no encontrado');

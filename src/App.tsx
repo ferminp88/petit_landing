@@ -13,7 +13,10 @@ import { AdminProductForm } from './admin/AdminProductForm';
 import { AdminCategories } from './admin/AdminCategories';
 import { AdminSizes } from './admin/AdminSizes';
 import { AdminPromotion } from './admin/AdminPromotion';
-import { fetchProducts } from './lib/api';
+import { AdminBanners } from './admin/AdminBanners';
+import { CategoryBanners } from './components/CategoryBanners';
+import { PromoBanner } from './components/PromoBanner';
+import { fetchProducts, fetchBanners, PublicBanner } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -64,11 +67,17 @@ function Store() {
   const [category, setCategory] = useState('Todos');
   const [size, setSize] = useState('Todos');
   const [priceRangeId, setPriceRangeId] = useState('any');
+  const [categoryBanners, setCategoryBanners] = useState<PublicBanner[]>([]);
+  const [promoBanners, setPromoBanners] = useState<PublicBanner[]>([]);
 
   useEffect(() => {
     fetchProducts()
       .then(setProducts)
       .finally(() => setLoading(false));
+    fetchBanners().then(({ categories, promos }) => {
+      setCategoryBanners(categories);
+      setPromoBanners(promos);
+    });
   }, []);
 
   const categories = useMemo(
@@ -108,6 +117,7 @@ function Store() {
       <Navbar onCartClick={() => setIsCartOpen(true)} />
       <main className="flex-grow">
         <Hero fallbackImage={products[0]?.image} />
+        <CategoryBanners banners={categoryBanners} onSelectCategory={setCategory} />
         <FeaturedProducts
           products={products}
           onSelect={setSelectedProduct}
@@ -158,8 +168,13 @@ function Store() {
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10"
             >
               <AnimatePresence mode='popLayout'>
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
+                {filteredProducts.map((product, idx) => (
+                  <React.Fragment key={product.id}>
+                    <ProductCard product={product} onClick={() => setSelectedProduct(product)} />
+                    {idx === 7 && promoBanners.length > 0 && (
+                      <PromoBanner banners={promoBanners} onSelectCategory={setCategory} />
+                    )}
+                  </React.Fragment>
                 ))}
               </AnimatePresence>
             </motion.div>
@@ -204,6 +219,7 @@ export default function App() {
       <Route path="/admin/categories" element={<AdminGuard><AdminCategories /></AdminGuard>} />
       <Route path="/admin/sizes" element={<AdminGuard><AdminSizes /></AdminGuard>} />
       <Route path="/admin/promotion" element={<AdminGuard><AdminPromotion /></AdminGuard>} />
+      <Route path="/admin/banners" element={<AdminGuard><AdminBanners /></AdminGuard>} />
     </Routes>
   );
 }

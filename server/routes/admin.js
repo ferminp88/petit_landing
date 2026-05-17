@@ -253,4 +253,84 @@ router.put('/promotion', upload.single('image'), (req, res) => {
   res.json(db.prepare('SELECT * FROM promotion WHERE id = 1').get());
 });
 
+// === BANNERS ===
+router.get('/banners', (req, res) => {
+  const type = req.query.type;
+  if (type === 'category' || type === 'promo') {
+    return res.json(
+      db.prepare('SELECT * FROM banners WHERE type = ? ORDER BY position ASC, id ASC').all(type)
+    );
+  }
+  res.json(db.prepare('SELECT * FROM banners ORDER BY type, position ASC, id ASC').all());
+});
+
+router.post('/banners', upload.single('image'), (req, res) => {
+  const type = String(req.body.type || '').trim();
+  if (type !== 'category' && type !== 'promo') {
+    return res.status(400).json({ error: 'Tipo inválido (category | promo)' });
+  }
+  const title = sanitizeStr(req.body.title, 100);
+  const subtitle = sanitizeStr(req.body.subtitle, 200);
+  const link = sanitizeStr(req.body.link, 300);
+  const position = parseInt(req.body.position) || 0;
+  const active = parseBool01(req.body.active);
+  const image = req.file ? `/uploads/${req.file.filename}` : '';
+
+  if (!image) return res.status(400).json({ error: 'La imagen es requerida' });
+
+  const result = db.prepare(`
+    INSERT INTO banners (type, title, subtitle, image, link, position, active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(type, title, subtitle, image, link, position, active);
+
+  res.status(201).json(db.prepare('SELECT * FROM banners WHERE id = ?').get(result.lastInsertRowid));
+});
+
+router.put('/banners/:id', upload.single('image'), (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  const existing = db.prepare('SELECT * FROM banners WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Banner no encontrado' });
+
+  const title = req.body.title !== undefined ? sanitizeStr(req.body.title, 100) : existing.title;
+  const subtitle = req.body.subtitle !== undefined ? sanitizeStr(req.body.subtitle, 200) : existing.subtitle;
+  const link = req.body.link !== undefined ? sanitizeStr(req.body.link, 300) : existing.link;
+  const position = req.body.position !== undefined ? (parseInt(req.body.position) || 0) : existing.position;
+  const active = req.body.active !== undefined ? parseBool01(req.body.active) : existing.active;
+
+  let image = existing.image;
+  if (req.body.clear_image === '1' && !req.file) {
+    deleteLocalUpload(image);
+    image = '';
+  }
+  if (req.file) {
+    deleteLocalUpload(image);
+    image = `/uploads/${req.file.filename}`;
+  }
+
+  db.prepare(`
+    UPDATE banners SET title=?, subtitle=?, image=?, link=?, position=?, active=?
+    WHERE id=?
+  `).run(title, subtitle, image, link, position, active, req.params.id);
+
+  res.json(db.prepare('SELECT * FROM banners WHERE id = ?').get(req.params.id));
+});
+
+router.patch('/banners/:id/toggle', (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  const existing = db.prepare('SELECT * FROM banners WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Banner no encontrado' });
+  const newActive = existing.active === 1 ? 0 : 1;
+  db.prepare('UPDATE banners SET active = ? WHERE id = ?').run(newActive, req.params.id);
+  res.json(db.prepare('SELECT * FROM banners WHERE id = ?').get(req.params.id));
+});
+
+router.delete('/banners/:id', (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  const existing = db.prepare('SELECT * FROM banners WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Banner no encontrado' });
+  deleteLocalUpload(existing.image);
+  db.prepare('DELETE FROM banners WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 module.exports = router;
