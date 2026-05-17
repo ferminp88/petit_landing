@@ -46,6 +46,7 @@ export function AdminBanners() {
   const [newPreview, setNewPreview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [imageInfo, setImageInfo] = useState<{ w: number; h: number; warn: string | null } | null>(null);
 
   const sorted = useMemo(
     () => [...banners].sort((a, b) => a.position - b.position || a.id - b.id),
@@ -104,14 +105,37 @@ export function AdminBanners() {
     setNewFile(null);
     if (newPreview) URL.revokeObjectURL(newPreview);
     setNewPreview('');
+    setImageInfo(null);
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     if (newPreview) URL.revokeObjectURL(newPreview);
+    const url = URL.createObjectURL(f);
     setNewFile(f);
-    setNewPreview(URL.createObjectURL(f));
+    setNewPreview(url);
+    setImageInfo(null);
+    setError('');
+
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const ratio = w / h;
+      let warn: string | null = null;
+      if (w < 1200) {
+        warn = `La imagen es muy chica (${w}×${h}px). Se va a ver pixelada. Recomendado: mínimo 1600px de ancho.`;
+      } else if (w < 1600) {
+        warn = `Ideal subir una imagen un poco más grande (actual ${w}×${h}px, recomendado 1920px de ancho o más).`;
+      } else if (ratio < 1.4) {
+        warn = `La imagen no es apaisada (relación ${ratio.toFixed(2)}:1). El banner es horizontal, te recomendamos 16:9 (ej. 1920×1080).`;
+      }
+      setImageInfo({ w, h, warn });
+    };
+    img.onerror = () => setImageInfo({ w: 0, h: 0, warn: 'No se pudo leer la imagen.' });
+    img.src = url;
+
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -251,6 +275,21 @@ export function AdminBanners() {
                 </div>
               )}
               <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handleFile} />
+
+              {imageInfo && imageInfo.w > 0 && (
+                <div className={`mt-2 px-3 py-2 rounded-xl text-xs ${
+                  imageInfo.warn
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                  <p className="font-bold mb-0.5">
+                    {imageInfo.warn ? '⚠️ ' : '✓ '}
+                    {imageInfo.w} × {imageInfo.h}px
+                  </p>
+                  {imageInfo.warn && <p className="opacity-90">{imageInfo.warn}</p>}
+                  {!imageInfo.warn && <p className="opacity-90">Tamaño perfecto para el banner.</p>}
+                </div>
+              )}
             </div>
 
             {/* Campos */}
