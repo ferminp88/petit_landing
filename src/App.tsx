@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
+import { HeroCarousel } from './components/HeroCarousel';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
 import { CartDrawer } from './components/CartDrawer';
@@ -14,8 +14,6 @@ import { AdminCategories } from './admin/AdminCategories';
 import { AdminSizes } from './admin/AdminSizes';
 import { AdminPromotion } from './admin/AdminPromotion';
 import { AdminBanners } from './admin/AdminBanners';
-import { CategoryBanners } from './components/CategoryBanners';
-import { PromoBanner } from './components/PromoBanner';
 import { fetchProducts, fetchBanners, PublicBanner } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -67,16 +65,14 @@ function Store() {
   const [category, setCategory] = useState('Todos');
   const [size, setSize] = useState('Todos');
   const [priceRangeId, setPriceRangeId] = useState('any');
-  const [categoryBanners, setCategoryBanners] = useState<PublicBanner[]>([]);
-  const [promoBanners, setPromoBanners] = useState<PublicBanner[]>([]);
+  const [heroBanners, setHeroBanners] = useState<PublicBanner[]>([]);
 
   useEffect(() => {
     fetchProducts()
       .then(setProducts)
       .finally(() => setLoading(false));
     fetchBanners().then(({ categories, promos }) => {
-      setCategoryBanners(categories);
-      setPromoBanners(promos);
+      setHeroBanners([...categories, ...promos]);
     });
   }, []);
 
@@ -116,8 +112,7 @@ function Store() {
     <div className="min-h-screen flex flex-col pt-16">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
       <main className="flex-grow">
-        <Hero fallbackImage={products[0]?.image} />
-        <CategoryBanners banners={categoryBanners} onSelectCategory={setCategory} />
+        <HeroCarousel banners={heroBanners} onSelectCategory={setCategory} />
         <FeaturedProducts
           products={products}
           onSelect={setSelectedProduct}
@@ -168,13 +163,8 @@ function Store() {
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10"
             >
               <AnimatePresence mode='popLayout'>
-                {filteredProducts.map((product, idx) => (
-                  <React.Fragment key={product.id}>
-                    <ProductCard product={product} onClick={() => setSelectedProduct(product)} />
-                    {idx === 7 && promoBanners.length > 0 && (
-                      <PromoBanner banners={promoBanners} onSelectCategory={setCategory} />
-                    )}
-                  </React.Fragment>
+                {filteredProducts.map(product => (
+                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
                 ))}
               </AnimatePresence>
             </motion.div>

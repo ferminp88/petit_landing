@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, Trash2, Edit2, Power, X, LayoutGrid, Megaphone } from 'lucide-react';
+import { Plus, Upload, Trash2, Edit2, Power, X } from 'lucide-react';
 import {
   adminFetchBanners, adminCreateBanner, adminUpdateBanner,
   adminToggleBanner, adminDeleteBanner,
@@ -33,12 +33,12 @@ export function AdminBanners() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [tab, setTab] = useState<BannerType>('category');
   const [banners, setBanners] = useState<AdminBanner[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingType, setEditingType] = useState<BannerType>('promo');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<BannerFormState>(EMPTY_FORM);
   const [currentImage, setCurrentImage] = useState('');
@@ -47,7 +47,10 @@ export function AdminBanners() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const filtered = useMemo(() => banners.filter(b => b.type === tab), [banners, tab]);
+  const sorted = useMemo(
+    () => [...banners].sort((a, b) => a.position - b.position || a.id - b.id),
+    [banners]
+  );
 
   async function load() {
     setLoading(true);
@@ -67,7 +70,8 @@ export function AdminBanners() {
 
   function startCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, position: String(filtered.length) });
+    setEditingType('promo');
+    setForm({ ...EMPTY_FORM, position: String(banners.length) });
     setCurrentImage('');
     setNewFile(null);
     if (newPreview) URL.revokeObjectURL(newPreview);
@@ -78,6 +82,7 @@ export function AdminBanners() {
 
   function startEdit(b: AdminBanner) {
     setEditingId(b.id);
+    setEditingType(b.type);
     setForm({
       title: b.title || '',
       subtitle: b.subtitle || '',
@@ -139,7 +144,7 @@ export function AdminBanners() {
     }
 
     const fd = new FormData();
-    fd.append('type', tab);
+    fd.append('type', editingType);
     fd.append('title', form.title.trim());
     fd.append('subtitle', form.subtitle.trim());
     fd.append('link', form.link.trim());
@@ -179,48 +184,51 @@ export function AdminBanners() {
   );
 
   return (
-    <AdminShell title="Banners" subtitle="Gestioná los banners de categoría y promociones del catálogo" actions={newButton}>
-      {/* TABS */}
-      <div className="flex gap-2 mb-6 bg-white rounded-2xl p-1.5 w-fit shadow-sm">
-        {([
-          { id: 'category' as const, label: 'Categorías', Icon: LayoutGrid },
-          { id: 'promo' as const, label: 'Promo', Icon: Megaphone },
-        ]).map(t => {
-          const isActive = tab === t.id;
-          const Icon = t.Icon;
-          return (
-            <button
-              key={t.id}
-              onClick={() => { setTab(t.id); cancelForm(); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                isActive ? 'bg-gradient text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
+    <AdminShell title="Banners" subtitle="Slides del carrusel principal de la home (apaisados 16:9)" actions={newButton}>
       {/* FORM (inline) */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 md:p-8 mb-6 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="font-display font-bold text-lg text-slate-900">
-              {editingId ? 'Editar' : 'Nuevo'} banner — <span className="text-pink-600">{tab === 'category' ? 'Categoría' : 'Promo'}</span>
+              {editingId ? 'Editar banner' : 'Nuevo banner'}
             </h2>
             <button type="button" onClick={cancelForm} className="p-2 hover:bg-slate-100 rounded-lg">
               <X className="w-4 h-4 text-slate-500" />
             </button>
           </div>
 
+          {/* Tipo */}
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Tipo</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingType('category')}
+                className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                  editingType === 'category' ? 'bg-sky-500 text-white border-sky-500' : 'bg-white text-slate-600 border-slate-200 hover:border-sky-300'
+                }`}
+              >
+                Categoría
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingType('promo')}
+                className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                  editingType === 'promo' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'
+                }`}
+              >
+                Promo
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1.5">Etiqueta para organizar internamente. Todos los banners activos se mezclan en el mismo carrusel.</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Imagen */}
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Imagen *</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Imagen apaisada *</label>
               {previewSrc ? (
-                <div className={`relative ${tab === 'category' ? 'aspect-square' : 'aspect-[16/9]'} rounded-2xl overflow-hidden border border-slate-200`}>
+                <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
                   <img src={previewSrc} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
@@ -233,12 +241,12 @@ export function AdminBanners() {
               ) : (
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className={`${tab === 'category' ? 'aspect-square' : 'aspect-[16/9]'} border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-pink-300 transition-colors text-slate-400`}
+                  className="aspect-[16/9] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-pink-300 transition-colors text-slate-400"
                 >
                   <Upload className="w-8 h-8 mb-2 opacity-50" />
                   <p className="text-sm font-medium">Subir imagen</p>
-                  <p className="text-[10px] mt-1 opacity-70">
-                    {tab === 'category' ? 'Cuadrada o vertical' : 'Apaisada 16:9'} · JPG/PNG/WEBP · máx. 5 MB
+                  <p className="text-[10px] mt-1 opacity-70 text-center px-4">
+                    Recomendado apaisada 16:9 (ej. 1920×1080) · JPG/PNG/WEBP · máx. 5 MB
                   </p>
                 </div>
               )}
@@ -253,7 +261,7 @@ export function AdminBanners() {
                   type="text"
                   value={form.title}
                   onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-                  placeholder={tab === 'category' ? 'Ej: Perros' : 'Ej: 30% OFF en arneses'}
+                  placeholder={editingType === 'category' ? 'Ej: Perros' : 'Ej: 30% OFF en arneses'}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
                 />
               </div>
@@ -263,7 +271,7 @@ export function AdminBanners() {
                   type="text"
                   value={form.subtitle}
                   onChange={e => setForm(p => ({ ...p, subtitle: e.target.value }))}
-                  placeholder={tab === 'category' ? 'Ej: Collares, arneses y más' : 'Ej: Hasta el 31 de mayo'}
+                  placeholder={editingType === 'category' ? 'Ej: Collares, arneses y más' : 'Ej: Hasta el 31 de mayo'}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-400"
                 />
               </div>
@@ -340,9 +348,9 @@ export function AdminBanners() {
           <div className="flex justify-center py-16">
             <div className="w-6 h-6 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="text-center py-16 text-slate-400 text-sm">
-            Aún no hay banners de {tab === 'category' ? 'categoría' : 'promo'}.
+            Aún no hay banners.
             <br />
             <button onClick={startCreate} className="mt-3 inline-flex items-center gap-1.5 text-pink-600 font-bold hover:underline">
               <Plus className="w-4 h-4" /> Crear el primero
@@ -350,26 +358,29 @@ export function AdminBanners() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filtered
-              .sort((a, b) => a.position - b.position || a.id - b.id)
-              .map(b => (
+            {sorted.map(b => (
                 <div key={b.id} className="p-4 md:p-5 flex gap-4 items-center">
                   <img
                     src={resolveImage(b.image) || 'https://placehold.co/80x80/f5f1ea/94a3b8?text=?'}
                     alt={b.title}
-                    className={`${tab === 'category' ? 'w-16 h-16 rounded-2xl' : 'w-24 h-14 rounded-xl'} object-cover flex-shrink-0 border border-slate-100`}
+                    className="w-24 h-14 rounded-xl object-cover flex-shrink-0 border border-slate-100"
                     referrerPolicy="no-referrer"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-sm text-slate-800 truncate">{b.title || '(sin título)'}</p>
                       <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        b.type === 'category' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {b.type === 'category' ? 'Categoría' : 'Promo'}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
                         b.active === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
                       }`}>
                         {b.active === 1 ? 'Visible' : 'Oculto'}
                       </span>
                       {b.link && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-pink-100 text-pink-700">
                           → {b.link}
                         </span>
                       )}
@@ -400,3 +411,4 @@ export function AdminBanners() {
     </AdminShell>
   );
 }
+
