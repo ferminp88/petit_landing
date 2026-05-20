@@ -102,7 +102,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
           <div className="max-h-[100vh] md:max-h-[92vh] overflow-y-auto md:flex md:overflow-hidden">
 
-            <div className="w-full md:w-1/2 md:max-h-[92vh] md:flex md:flex-col bg-bone">
+            <div className="w-full md:w-1/2 md:max-h-[92vh] md:flex md:flex-row bg-bone">
+              {hasMultiple && (
+                <div className="hidden md:flex flex-col gap-2 p-3 overflow-y-auto bg-white border-r border-mocha/10 w-20 flex-shrink-0">
+                  {images.map((img, i) => (
+                    <button
+                      key={`side-${img}-${i}`}
+                      type="button"
+                      onClick={() => setCurrentIndex(i)}
+                      className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
+                        i === currentIndex && !colorImage
+                          ? 'border-brand-magenta opacity-100'
+                          : 'border-mocha/15 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </button>
+                  ))}
+                </div>
+              )}
               <motion.div
                 drag={hasMultiple ? 'x' : false}
                 dragConstraints={{ left: 0, right: 0 }}
@@ -153,7 +171,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </motion.div>
 
               {hasMultiple && (
-                <div className="flex gap-2 p-3 overflow-x-auto bg-white border-t border-mocha/10">
+                <div className="md:hidden flex gap-2 p-3 overflow-x-auto bg-white border-t border-mocha/10">
                   {images.map((img, i) => (
                     <button
                       key={`${img}-${i}`}

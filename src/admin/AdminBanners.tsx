@@ -8,6 +8,7 @@ import {
 } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { AdminShell } from './AdminShell';
+import { ImageCropper } from '../components/ImageCropper';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -47,6 +48,7 @@ export function AdminBanners() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [imageInfo, setImageInfo] = useState<{ w: number; h: number; warn: string | null } | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const sorted = useMemo(
     () => [...banners].sort((a, b) => a.position - b.position || a.id - b.id),
@@ -108,9 +110,7 @@ export function AdminBanners() {
     setImageInfo(null);
   }
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  function applyBannerFile(f: File) {
     if (newPreview) URL.revokeObjectURL(newPreview);
     const url = URL.createObjectURL(f);
     setNewFile(f);
@@ -135,8 +135,13 @@ export function AdminBanners() {
     };
     img.onerror = () => setImageInfo({ w: 0, h: 0, warn: 'No se pudo leer la imagen.' });
     img.src = url;
+  }
 
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
     if (fileRef.current) fileRef.current.value = '';
+    if (!f) return;
+    setCropFile(f);
   }
 
   async function handleToggle(id: number) {
@@ -209,6 +214,15 @@ export function AdminBanners() {
 
   return (
     <AdminShell title="Banners" subtitle="Slides del carrusel principal de la home (apaisados 16:9)" actions={newButton}>
+      {cropFile && (
+        <ImageCropper
+          file={cropFile}
+          aspect={16 / 9}
+          title="Ajustar imagen del banner (16:9)"
+          onCancel={() => setCropFile(null)}
+          onConfirm={cropped => { applyBannerFile(cropped); setCropFile(null); }}
+        />
+      )}
       {/* FORM (inline) */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 md:p-8 mb-6 shadow-sm space-y-5">

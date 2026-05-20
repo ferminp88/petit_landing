@@ -8,6 +8,7 @@ import {
 } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { AdminShell } from './AdminShell';
+import { ImageCropper } from '../components/ImageCropper';
 
 const MAX_IMAGES = 10;
 
@@ -36,6 +37,8 @@ export function AdminProductForm() {
   const [colorImages, setColorImages] = useState<Record<string, string>>({});
   const [colorFiles, setColorFiles] = useState<Record<string, File>>({});
   const [colorPreviews, setColorPreviews] = useState<Record<string, string>>({});
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
+  const [cropColor, setCropColor] = useState<{ name: string; file: File } | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
@@ -116,6 +119,10 @@ export function AdminProductForm() {
   }, [colorPreviews]);
 
   function pickColorFile(name: string, file: File) {
+    setCropColor({ name, file });
+  }
+
+  function commitColorFile(name: string, file: File) {
     setColorFiles(prev => ({ ...prev, [name]: file }));
     setColorPreviews(prev => {
       if (prev[name]) URL.revokeObjectURL(prev[name]);
@@ -153,13 +160,19 @@ export function AdminProductForm() {
     return Math.round((1 - price / compareAt) * 100);
   }, [form.price, form.compare_at_price]);
 
+  function commitNewFile(f: File) {
+    const remaining = MAX_IMAGES - existingImages.length - newFiles.length;
+    if (remaining <= 0) return;
+    setNewFiles(prev => [...prev, f]);
+    setNewFilePreviews(prev => [...prev, URL.createObjectURL(f)]);
+  }
+
   function addFiles(files: FileList | File[]) {
     const arr = Array.from(files);
     const remaining = MAX_IMAGES - existingImages.length - newFiles.length;
     if (remaining <= 0) return;
-    const toAdd = arr.slice(0, remaining);
-    setNewFiles(prev => [...prev, ...toAdd]);
-    setNewFilePreviews(prev => [...prev, ...toAdd.map(f => URL.createObjectURL(f))]);
+    const toQueue = arr.slice(0, remaining);
+    setCropQueue(prev => [...prev, ...toQueue]);
   }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -283,6 +296,26 @@ export function AdminProductForm() {
 
   return (
     <AdminShell title={isEdit ? 'Editar producto' : 'Nuevo producto'} subtitle={isEdit ? 'Actualizá los datos del producto' : 'Cargá un nuevo producto al catálogo'} actions={backAction}>
+      {cropQueue.length > 0 && (
+        <ImageCropper
+          key={`gallery-${cropQueue.length}`}
+          file={cropQueue[0]}
+          aspect={1}
+          title="Ajustar foto del producto (1:1)"
+          onCancel={() => setCropQueue(prev => prev.slice(1))}
+          onConfirm={cropped => { commitNewFile(cropped); setCropQueue(prev => prev.slice(1)); }}
+        />
+      )}
+      {cropColor && (
+        <ImageCropper
+          key={`color-${cropColor.name}`}
+          file={cropColor.file}
+          aspect={1}
+          title={`Ajustar imagen del color "${cropColor.name}"`}
+          onCancel={() => setCropColor(null)}
+          onConfirm={cropped => { commitColorFile(cropColor.name, cropped); setCropColor(null); }}
+        />
+      )}
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 space-y-5 shadow-sm">
 
         <div>
