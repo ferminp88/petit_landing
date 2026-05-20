@@ -9,6 +9,7 @@ import {
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { AdminShell } from './AdminShell';
 import { ImageCropper } from '../components/ImageCropper';
+import { compareSizeNames, sortBySize } from '../utils/sizeOrder';
 
 const MAX_IMAGES = 10;
 
@@ -75,8 +76,7 @@ export function AdminProductForm() {
       });
       if (Array.isArray(product.sizes) && product.sizes.length > 0) {
         setProductSizes(
-          [...product.sizes]
-            .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+          sortBySize(product.sizes, s => s.name)
             .map(s => ({
               name: s.name,
               price: String(s.price),
@@ -208,9 +208,7 @@ export function AdminProductForm() {
         price: form.price || '',
         compare_at_price: form.compare_at_price || '',
       };
-      return [...prev, next].sort((a, b) =>
-        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-      );
+      return [...prev, next].sort((a, b) => compareSizeNames(a.name, b.name));
     });
   }
 
@@ -524,7 +522,7 @@ export function AdminProductForm() {
           ) : (
             <>
               <div className="flex flex-wrap gap-2 mb-3">
-                {allSizes.map(s => {
+                {sortBySize<AdminSize>(allSizes, s => s.name).map(s => {
                   const isSelected = productSizes.some(ps => ps.name === s.name);
                   return (
                     <button

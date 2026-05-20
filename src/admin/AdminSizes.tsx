@@ -4,6 +4,7 @@ import { Plus, Trash2, Ruler } from 'lucide-react';
 import { adminFetchSizes, adminCreateSize, adminDeleteSize, AdminSize } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { AdminShell } from './AdminShell';
+import { compareSizeNames, sortBySize } from '../utils/sizeOrder';
 
 export function AdminSizes() {
   const { logout } = useAdminAuth();
@@ -16,7 +17,7 @@ export function AdminSizes() {
 
   async function load() {
     try {
-      setItems(await adminFetchSizes());
+      setItems(sortBySize(await adminFetchSizes(), s => s.name));
     } catch (err: any) {
       if (err.message === 'UNAUTHORIZED') { logout(); navigate('/admin/login'); }
     } finally {
@@ -33,7 +34,7 @@ export function AdminSizes() {
     setSubmitting(true);
     try {
       const created = await adminCreateSize(name.trim());
-      setItems(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setItems(prev => [...prev, created].sort((a, b) => compareSizeNames(a.name, b.name)));
       setName('');
     } catch (err: any) {
       if (err.message === 'UNAUTHORIZED') { logout(); navigate('/admin/login'); return; }

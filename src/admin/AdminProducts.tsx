@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Power } from 'lucide-react';
-import { adminFetchProducts, adminDeleteProduct, adminToggleProduct } from './adminApi';
+import { adminFetchProducts, adminDeleteProduct, adminToggleProduct, adminFetchCategories, AdminCategory } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { RawProduct } from '../types';
 import { AdminShell } from './AdminShell';
@@ -10,13 +10,16 @@ export function AdminProducts() {
   const { logout } = useAdminAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<RawProduct[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
   async function load() {
     try {
-      const data = await adminFetchProducts();
+      const [data, cats] = await Promise.all([adminFetchProducts(), adminFetchCategories()]);
       setProducts(data);
+      setCategories(cats);
     } catch (err: any) {
       if (err.message === 'UNAUTHORIZED') { logout(); navigate('/admin/login'); }
     } finally {
@@ -25,6 +28,7 @@ export function AdminProducts() {
   }
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [activeCategory]);
 
   async function handleToggle(id: number) {
     try {
@@ -46,11 +50,20 @@ export function AdminProducts() {
   }
 
   const PAGE_SIZE = 10;
-  const total = products.length;
-  const activos = products.filter(p => p.active === 1).length;
+  const filtered = activeCategory === '__all__'
+    ? products
+    : products.filter(p => (p.category || '') === activeCategory);
+  const total = filtered.length;
+  const activos = filtered.filter(p => p.active === 1).length;
   const inactivos = total - activos;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const paginated = products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const categoryCounts = products.reduce<Record<string, number>>((acc, p) => {
+    const k = p.category || '';
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
 
   const newProductButton = (
     <button
@@ -65,6 +78,31 @@ export function AdminProducts() {
 
   return (
     <AdminShell title="Productos" subtitle="Gestioná tu catálogo de accesorios" actions={newProductButton}>
+        {/* CATEGORY TABS */}
+        <div className="mb-5 -mx-1 overflow-x-auto">
+          <div className="flex gap-2 px-1 pb-1 min-w-max">
+            {[{ key: '__all__', name: 'Todos', count: products.length }, ...categories.map(c => ({ key: c.name, name: c.name, count: categoryCounts[c.name] || 0 }))].map(tab => {
+              const isActive = activeCategory === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveCategory(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-gradient text-white shadow-md shadow-pink-500/30'
+                      : 'bg-white text-slate-600 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
+                >
+                  <span>{tab.name}</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* STATS */}
         <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
           {[
@@ -86,9 +124,11 @@ export function AdminProducts() {
             <div className="flex justify-center py-16">
               <div className="w-6 h-6 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : products.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-slate-400 text-sm">
-              No hay productos. ¡Creá el primero!
+              {products.length === 0
+                ? '¡No hay productos. Creá el primero!'
+                : `No hay productos en "${activeCategory}".`}
             </div>
           ) : (
             <>

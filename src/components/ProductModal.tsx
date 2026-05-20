@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Minus, Plus, ChevronLeft, ChevronRight, Heart, Truck, ShieldCheck, Star } from 'lucide-react';
-import { Product } from '../types';
+import { Product, ProductSize } from '../types';
 import { useCart } from '../context/CartContext';
+import { sortBySize } from '../utils/sizeOrder';
 
 interface ProductModalProps {
   product: Product | null;
@@ -23,15 +24,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
       initial[v.type] = v.options[0];
     });
     if (product.sizes && product.sizes.length > 0) {
-      initial.size = product.sizes[0].name;
+      initial.size = sortBySize<ProductSize>(product.sizes, s => s.name)[0].name;
     }
     return initial;
   });
 
+  const sortedSizes = useMemo(
+    () => (product.sizes ? sortBySize<ProductSize>(product.sizes, s => s.name) : []),
+    [product.sizes]
+  );
+
   const selectedSize = useMemo(() => {
-    if (!product.sizes || product.sizes.length === 0) return null;
-    return product.sizes.find(s => s.name === selectedVariants.size) ?? product.sizes[0];
-  }, [product.sizes, selectedVariants.size]);
+    if (sortedSizes.length === 0) return null;
+    return sortedSizes.find(s => s.name === selectedVariants.size) ?? sortedSizes[0];
+  }, [sortedSizes, selectedVariants.size]);
 
   const effectivePrice = selectedSize ? selectedSize.price : product.price;
   const effectiveCompareAt = selectedSize ? selectedSize.compareAtPrice : product.compareAtPrice;
@@ -280,13 +286,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   </div>
                 ))}
 
-                {product.sizes && product.sizes.length > 0 && (
+                {sortedSizes.length > 0 && (
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha mb-2">
                       Elegí talle
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((s) => {
+                      {sortedSizes.map((s) => {
                         const isSel = selectedVariants.size === s.name;
                         return (
                           <button
