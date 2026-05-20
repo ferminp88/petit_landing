@@ -105,6 +105,22 @@ export async function fetchBanners(): Promise<{ categories: PublicBanner[]; prom
   };
 }
 
+export interface AnnouncementBarData {
+  messages: string[];
+  speedSeconds: number;
+}
+
+export async function fetchAnnouncementBar(): Promise<AnnouncementBarData | null> {
+  const res = await fetch(`${API_BASE}/api/announcement-bar`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return null;
+  return {
+    messages: data.messages,
+    speedSeconds: data.speed_seconds || 30,
+  };
+}
+
 export async function fetchProduct(id: string): Promise<Product> {
   const res = await fetch(`${API_BASE}/api/products/${id}`);
   if (!res.ok) throw new Error('Producto no encontrado');

@@ -323,6 +323,42 @@ router.put('/promotion', upload.single('image'), (req, res) => {
   res.json(db.prepare('SELECT * FROM promotion WHERE id = 1').get());
 });
 
+// === ANNOUNCEMENT BAR (single row) ===
+function parseMessagesArray(raw) {
+  let arr;
+  try { arr = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return []; }
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map(x => sanitizeStr(x, 200))
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+router.get('/announcement-bar', (req, res) => {
+  const row = db.prepare('SELECT * FROM announcement_bar WHERE id = 1').get();
+  res.json({
+    messages: parseMessagesArray(row?.messages),
+    active: row?.active === 1 ? 1 : 0,
+    speed_seconds: row?.speed_seconds ?? 30,
+  });
+});
+
+router.put('/announcement-bar', express.json(), (req, res) => {
+  const messages = parseMessagesArray(req.body.messages);
+  const active = parseBool01(req.body.active);
+  let speed = parseInt(req.body.speed_seconds);
+  if (!isFinite(speed) || speed < 5) speed = 30;
+  if (speed > 600) speed = 600;
+
+  db.prepare(`
+    UPDATE announcement_bar
+    SET messages = ?, active = ?, speed_seconds = ?, updated_at = datetime('now')
+    WHERE id = 1
+  `).run(JSON.stringify(messages), active, speed);
+
+  res.json({ messages, active, speed_seconds: speed });
+});
+
 // === BANNERS ===
 router.get('/banners', (req, res) => {
   const type = req.query.type;

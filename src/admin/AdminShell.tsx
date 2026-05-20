@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Package, Tag, Ruler, Menu, X, Sparkles, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Package, Tag, Ruler, Menu, X, Sparkles, ExternalLink, Image as ImageIcon, Megaphone } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
 type NavColor = 'magenta' | 'orange' | 'sky' | 'violet' | 'emerald';
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/categories', label: 'Categorías', icon: Tag, color: 'orange' },
   { to: '/admin/sizes', label: 'Talles', icon: Ruler, color: 'sky' },
   { to: '/admin/banners', label: 'Banners', icon: ImageIcon, color: 'emerald' },
+  { to: '/admin/announcement-bar', label: 'Franja superior', icon: Megaphone, color: 'violet' },
 ];
 
 const COLOR_STYLES: Record<NavColor, { active: string; inactive: string; iconBg: string; iconText: string }> = {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
+import { AnnouncementBar } from './components/AnnouncementBar';
 import { HeroCarousel } from './components/HeroCarousel';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
@@ -13,7 +14,8 @@ import { AdminProductForm } from './admin/AdminProductForm';
 import { AdminCategories } from './admin/AdminCategories';
 import { AdminSizes } from './admin/AdminSizes';
 import { AdminBanners } from './admin/AdminBanners';
-import { fetchProducts, fetchBanners, PublicBanner } from './lib/api';
+import { AdminAnnouncementBar } from './admin/AdminAnnouncementBar';
+import { fetchProducts, fetchBanners, fetchAnnouncementBar, PublicBanner, AnnouncementBarData } from './lib/api';
 import { Product } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -65,6 +67,7 @@ function Store() {
   const [size, setSize] = useState('Todos');
   const [priceRangeId, setPriceRangeId] = useState('any');
   const [heroBanners, setHeroBanners] = useState<PublicBanner[]>([]);
+  const [announcement, setAnnouncement] = useState<AnnouncementBarData | null>(null);
 
   useEffect(() => {
     fetchProducts()
@@ -73,6 +76,7 @@ function Store() {
     fetchBanners().then(({ categories, promos }) => {
       setHeroBanners([...categories, ...promos]);
     });
+    fetchAnnouncementBar().then(setAnnouncement).catch(() => setAnnouncement(null));
   }, []);
 
   const categories = useMemo(
@@ -108,8 +112,9 @@ function Store() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pt-16">
-      <Navbar onCartClick={() => setIsCartOpen(true)} />
+    <div className={`min-h-screen flex flex-col ${announcement ? 'pt-24' : 'pt-16'}`}>
+      {announcement && <AnnouncementBar messages={announcement.messages} speedSeconds={announcement.speedSeconds} />}
+      <Navbar onCartClick={() => setIsCartOpen(true)} topOffset={!!announcement} />
       <main className="flex-grow">
         <HeroCarousel banners={heroBanners} onSelectCategory={setCategory} />
         <FeaturedProducts
@@ -208,6 +213,7 @@ export default function App() {
       <Route path="/admin/categories" element={<AdminGuard><AdminCategories /></AdminGuard>} />
       <Route path="/admin/sizes" element={<AdminGuard><AdminSizes /></AdminGuard>} />
       <Route path="/admin/banners" element={<AdminGuard><AdminBanners /></AdminGuard>} />
+      <Route path="/admin/announcement-bar" element={<AdminGuard><AdminAnnouncementBar /></AdminGuard>} />
     </Routes>
   );
 }

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
   onCartClick: () => void;
+  topOffset?: boolean;
 }
 
 type NavLink = { label: string; targetId: string };
@@ -14,13 +15,13 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Contacto', targetId: 'contact' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false }) => {
   const { totalItems, totalPrice } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient text-white shadow-md">
+      <nav className={`fixed ${topOffset ? 'top-8' : 'top-0'} left-0 right-0 z-50 bg-gradient text-white shadow-md`}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
             <button

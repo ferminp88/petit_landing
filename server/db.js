@@ -113,6 +113,21 @@ if (!promoExists) {
   db.prepare(`INSERT INTO promotion (id, image, description, active) VALUES (1, '', '', 0)`).run();
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS announcement_bar (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    messages TEXT DEFAULT '[]',
+    active INTEGER DEFAULT 0,
+    speed_seconds INTEGER DEFAULT 30,
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+const annoExists = db.prepare("SELECT 1 FROM announcement_bar WHERE id = 1").get();
+if (!annoExists) {
+  db.prepare(`INSERT INTO announcement_bar (id, messages, active, speed_seconds) VALUES (1, '[]', 0, 30)`).run();
+}
+
 function parseImagesJSON(val) {
   if (!val) return [];
   try {

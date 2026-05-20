@@ -78,6 +78,25 @@ export async function adminDeleteSize(id: number): Promise<void> {
   await jsonRequest(`/api/admin/sizes/${id}`, { method: 'DELETE' });
 }
 
+// === Announcement Bar ===
+export interface AdminAnnouncementBar {
+  messages: string[];
+  active: number;
+  speed_seconds: number;
+}
+
+export async function adminFetchAnnouncementBar(): Promise<AdminAnnouncementBar> {
+  return jsonRequest<AdminAnnouncementBar>('/api/admin/announcement-bar');
+}
+
+export async function adminUpdateAnnouncementBar(payload: AdminAnnouncementBar): Promise<AdminAnnouncementBar> {
+  return jsonRequest<AdminAnnouncementBar>('/api/admin/announcement-bar', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 // === Promoción ===
 export interface AdminPromotion {
   id: number;
