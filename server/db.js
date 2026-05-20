@@ -71,6 +71,18 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS product_size_prices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    compare_at_price INTEGER,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE (product_id, name)
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS banners (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL CHECK (type IN ('category', 'promo')),
@@ -170,6 +182,29 @@ const insertIfNotExists = db.prepare(`
 
 for (const p of seedProducts) {
   insertIfNotExists.run(...p, p[0]);
+}
+
+// Backfill product_size_prices desde size_options CSV + price actual (idempotente)
+const SIZE_PRICES_BACKFILL_VERSION = 1;
+const sizePricesMigRow = db.prepare("SELECT value FROM migrations WHERE key = 'product_size_prices_backfill'").get();
+if (!sizePricesMigRow || sizePricesMigRow.value < SIZE_PRICES_BACKFILL_VERSION) {
+  const productsAll = db.prepare("SELECT id, price, compare_at_price, size_options FROM products").all();
+  const insertSizePrice = db.prepare(
+    'INSERT OR IGNORE INTO product_size_prices (product_id, name, price, compare_at_price) VALUES (?, ?, ?, ?)'
+  );
+  const markMig = db.prepare(
+    "INSERT OR REPLACE INTO migrations (key, value, applied_at) VALUES ('product_size_prices_backfill', ?, datetime('now'))"
+  );
+  const tx = db.transaction(() => {
+    for (const p of productsAll) {
+      const names = String(p.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
+      for (const n of names) {
+        insertSizePrice.run(p.id, n, p.price, p.compare_at_price);
+      }
+    }
+    markMig.run(SIZE_PRICES_BACKFILL_VERSION);
+  });
+  tx();
 }
 
 // Seed categorías y talles desde productos existentes (idempotente vía UNIQUE)

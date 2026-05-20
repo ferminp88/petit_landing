@@ -20,9 +20,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const hasDiscount = product.compareAtPrice !== null && product.compareAtPrice > product.price;
+  const sizes = product.sizes;
+  const sizePrices = sizes?.map(s => s.price) ?? [];
+  const minSizePrice = sizePrices.length > 0 ? Math.min(...sizePrices) : null;
+  const maxSizePrice = sizePrices.length > 0 ? Math.max(...sizePrices) : null;
+  const displayPrice = minSizePrice ?? product.price;
+  const hasPriceRange = minSizePrice !== null && maxSizePrice !== null && minSizePrice !== maxSizePrice;
+
+  const minSize = sizes && minSizePrice !== null ? sizes.find(s => s.price === minSizePrice) : null;
+  const displayCompareAt = minSize ? minSize.compareAtPrice : product.compareAtPrice;
+  const hasDiscount = displayCompareAt !== null && displayCompareAt > displayPrice;
   const percentOff = hasDiscount
-    ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
+    ? Math.round((1 - displayPrice / (displayCompareAt as number)) * 100)
     : 0;
 
   const nextImage = (e: React.MouseEvent) => {
@@ -139,13 +148,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
             </div>
 
             {/* Price */}
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              {hasPriceRange && (
+                <span className="text-[10px] uppercase tracking-wider font-bold text-mocha">Desde</span>
+              )}
               <span className="font-display text-lg font-bold text-brand-magenta">
-                ${product.price.toLocaleString('es-AR')}
+                ${displayPrice.toLocaleString('es-AR')}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-muted-foreground line-through">
-                  ${(product.compareAtPrice as number).toLocaleString('es-AR')}
+                  ${(displayCompareAt as number).toLocaleString('es-AR')}
                 </span>
               )}
             </div>

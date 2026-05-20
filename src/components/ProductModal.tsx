@@ -17,9 +17,23 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
-    product.variants?.forEach(v => { initial[v.type] = v.options[0]; });
+    product.variants?.forEach(v => {
+      if (v.type === 'size' && product.sizes && product.sizes.length > 0) return;
+      initial[v.type] = v.options[0];
+    });
+    if (product.sizes && product.sizes.length > 0) {
+      initial.size = product.sizes[0].name;
+    }
     return initial;
   });
+
+  const selectedSize = useMemo(() => {
+    if (!product.sizes || product.sizes.length === 0) return null;
+    return product.sizes.find(s => s.name === selectedVariants.size) ?? product.sizes[0];
+  }, [product.sizes, selectedVariants.size]);
+
+  const effectivePrice = selectedSize ? selectedSize.price : product.price;
+  const effectiveCompareAt = selectedSize ? selectedSize.compareAtPrice : product.compareAtPrice;
 
   const images = useMemo(() => {
     if (product.images?.length) return product.images;
@@ -46,7 +60,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   }, [hasMultiple, images.length]);
 
   const handleAdd = () => {
-    addToCart(product, selectedVariants, quantity);
+    const productForCart = selectedSize
+      ? { ...product, price: selectedSize.price, compareAtPrice: selectedSize.compareAtPrice }
+      : product;
+    addToCart(productForCart, selectedVariants, quantity);
     onClose();
   };
 
@@ -166,19 +183,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </div>
 
               {(() => {
-                const hasDiscount = product.compareAtPrice !== null && product.compareAtPrice > product.price;
+                const hasDiscount = effectiveCompareAt !== null && effectiveCompareAt > effectivePrice;
                 const percentOff = hasDiscount
-                  ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
+                  ? Math.round((1 - effectivePrice / (effectiveCompareAt as number)) * 100)
                   : 0;
                 return (
                   <div className="flex items-baseline gap-3 mb-6 flex-wrap">
                     <p className="font-display font-bold text-3xl text-brand-magenta">
-                      ${product.price.toLocaleString('es-AR')}
+                      ${effectivePrice.toLocaleString('es-AR')}
                     </p>
                     {hasDiscount && (
                       <>
                         <p className="text-base font-medium text-mocha line-through">
-                          ${(product.compareAtPrice as number).toLocaleString('es-AR')}
+                          ${(effectiveCompareAt as number).toLocaleString('es-AR')}
                         </p>
                         <span className="px-2 py-0.5 rounded-full bg-gradient text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
                           −{percentOff}% OFF
@@ -207,7 +224,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </div>
 
               <div className="space-y-5 mb-6">
-                {product.variants?.map((variant) => (
+                {product.variants?.filter(v => !(v.type === 'size' && product.sizes && product.sizes.length > 0)).map((variant) => (
                   <div key={variant.type}>
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha mb-2">
                       {variant.type === 'color' ? 'Elegí color' : 'Elegí talle'}
@@ -229,6 +246,35 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     </div>
                   </div>
                 ))}
+
+                {product.sizes && product.sizes.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha mb-2">
+                      Elegí talle
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {product.sizes.map((s) => {
+                        const isSel = selectedVariants.size === s.name;
+                        return (
+                          <button
+                            key={s.name}
+                            onClick={() => setSelectedVariants(prev => ({ ...prev, size: s.name }))}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex flex-col items-center leading-tight ${
+                              isSel
+                                ? 'bg-gradient text-white border-transparent shadow-md shadow-brand-magenta/20'
+                                : 'bg-white text-ink/70 border-mocha/25 hover:border-brand-magenta hover:text-brand-magenta'
+                            }`}
+                          >
+                            <span>{s.name}</span>
+                            <span className={`text-[10px] font-normal ${isSel ? 'text-white/90' : 'text-mocha'}`}>
+                              ${s.price.toLocaleString('es-AR')}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-5">

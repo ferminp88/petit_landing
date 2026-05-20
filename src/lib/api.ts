@@ -30,6 +30,11 @@ function mapProduct(raw: RawProduct): Product {
     variants.push({ type: 'size', options: raw.size_options.split(',').map(s => s.trim()).filter(Boolean) });
   }
   const images = parseImagesField(raw);
+  const sizes = Array.isArray(raw.sizes) && raw.sizes.length > 0
+    ? raw.sizes
+        .map(s => ({ name: s.name, price: s.price, compareAtPrice: s.compare_at_price ?? null }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+    : undefined;
   return {
     id: String(raw.id),
     name: raw.name,
@@ -40,6 +45,7 @@ function mapProduct(raw: RawProduct): Product {
     image: images[0] ?? '',
     images,
     variants: variants.length > 0 ? variants : undefined,
+    sizes,
     isNew: raw.is_new === 1,
     isBestSeller: raw.is_best_seller === 1,
   };

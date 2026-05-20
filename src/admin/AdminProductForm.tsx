@@ -31,7 +31,8 @@ export function AdminProductForm() {
   const [form, setForm] = useState({
     name: '', description: '', price: '', compare_at_price: '', category: '', color_options: '',
   });
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  interface SizeRow { name: string; price: string; compare_at_price: string }
+  const [productSizes, setProductSizes] = useState<SizeRow[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
@@ -66,8 +67,24 @@ export function AdminProductForm() {
         category: product.category || '',
         color_options: product.color_options || '',
       });
-      const existingSizes = String(product.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
-      setSelectedSizes(existingSizes);
+      if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+        setProductSizes(
+          [...product.sizes]
+            .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+            .map(s => ({
+              name: s.name,
+              price: String(s.price),
+              compare_at_price: s.compare_at_price !== null && s.compare_at_price !== undefined ? String(s.compare_at_price) : '',
+            }))
+        );
+      } else {
+        const existingSizes = String(product.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
+        setProductSizes(existingSizes.map(name => ({
+          name,
+          price: String(product.price),
+          compare_at_price: product.compare_at_price !== null && product.compare_at_price !== undefined ? String(product.compare_at_price) : '',
+        })));
+      }
       setIsNew(product.is_new === 1);
       setIsBestSeller(product.is_best_seller === 1);
       const imgs = parseImagesJSON(product.images);
@@ -123,7 +140,22 @@ export function AdminProductForm() {
   }
 
   function toggleSize(name: string) {
-    setSelectedSizes(prev => prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]);
+    setProductSizes(prev => {
+      const exists = prev.find(s => s.name === name);
+      if (exists) return prev.filter(s => s.name !== name);
+      const next: SizeRow = {
+        name,
+        price: form.price || '',
+        compare_at_price: form.compare_at_price || '',
+      };
+      return [...prev, next].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      );
+    });
+  }
+
+  function updateSizeField(name: string, field: 'price' | 'compare_at_price', value: string) {
+    setProductSizes(prev => prev.map(s => s.name === name ? { ...s, [field]: value } : s));
   }
 
   const totalImages = existingImages.length + newFiles.length;
@@ -135,6 +167,17 @@ export function AdminProductForm() {
     if (!form.price || isNaN(Number(form.price))) { setError('El precio debe ser un número'); return; }
     if (form.compare_at_price && isNaN(Number(form.compare_at_price))) { setError('El precio anterior debe ser un número'); return; }
 
+    for (const s of productSizes) {
+      if (!s.price || isNaN(Number(s.price)) || Number(s.price) < 0) {
+        setError(`El precio del talle "${s.name}" es inválido`);
+        return;
+      }
+      if (s.compare_at_price && isNaN(Number(s.compare_at_price))) {
+        setError(`El precio anterior del talle "${s.name}" es inválido`);
+        return;
+      }
+    }
+
     setError('');
     setLoading(true);
 
@@ -145,7 +188,12 @@ export function AdminProductForm() {
     formData.append('compare_at_price', form.compare_at_price || '');
     formData.append('category', form.category.trim());
     formData.append('color_options', form.color_options.trim());
-    formData.append('size_options', selectedSizes.join(', '));
+    formData.append('size_options', productSizes.map(s => s.name).join(', '));
+    formData.append('sizes', JSON.stringify(productSizes.map(s => ({
+      name: s.name,
+      price: Number(s.price),
+      compare_at_price: s.compare_at_price ? Number(s.compare_at_price) : null,
+    }))));
     formData.append('is_new', isNew ? '1' : '0');
     formData.append('is_best_seller', isBestSeller ? '1' : '0');
     formData.append('existing_images', JSON.stringify(existingImages));
@@ -319,32 +367,68 @@ export function AdminProductForm() {
 
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-            Talles (opcional) {selectedSizes.length > 0 && <span className="text-pink-500">— {selectedSizes.length} seleccionado{selectedSizes.length === 1 ? '' : 's'}</span>}
+            Talles (opcional) {productSizes.length > 0 && <span className="text-pink-500">— {productSizes.length} seleccionado{productSizes.length === 1 ? '' : 's'}</span>}
           </label>
           {allSizes.length === 0 ? (
             <p className="text-[11px] text-slate-400">
               Aún no hay talles. Creá los primeros en <button type="button" onClick={() => navigate('/admin/sizes')} className="text-pink-500 underline">Talles</button>.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {allSizes.map(s => {
-                const isSelected = selectedSizes.includes(s.name);
-                return (
-                  <button
-                    type="button"
-                    key={s.id}
-                    onClick={() => toggleSize(s.name)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                      isSelected
-                        ? 'bg-pink-500 text-white border-pink-500'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-pink-300'
-                    }`}
-                  >
-                    {s.name}
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {allSizes.map(s => {
+                  const isSelected = productSizes.some(ps => ps.name === s.name);
+                  return (
+                    <button
+                      type="button"
+                      key={s.id}
+                      onClick={() => toggleSize(s.name)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                        isSelected
+                          ? 'bg-pink-500 text-white border-pink-500'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-pink-300'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {productSizes.length > 0 && (
+                <div className="space-y-2 bg-slate-50 rounded-xl p-3">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">
+                    Precio por talle
+                  </p>
+                  {productSizes.map(s => (
+                    <div key={s.name} className="grid grid-cols-[auto_1fr_1fr] items-center gap-2">
+                      <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[60px] text-center">
+                        {s.name}
+                      </span>
+                      <input
+                        type="number"
+                        value={s.price}
+                        onChange={e => updateSizeField(s.name, 'price', e.target.value)}
+                        placeholder="Precio *"
+                        min="0"
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+                      />
+                      <input
+                        type="number"
+                        value={s.compare_at_price}
+                        onChange={e => updateSizeField(s.name, 'compare_at_price', e.target.value)}
+                        placeholder="Precio anterior"
+                        min="0"
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+                      />
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Cada talle puede tener su propio precio y precio anterior (opcional).
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 

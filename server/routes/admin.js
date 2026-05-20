@@ -65,9 +65,60 @@ function deleteLocalUpload(imageUrl) {
 
 router.use(requireAuth);
 
+const getSizesForProduct = db.prepare(
+  'SELECT name, price, compare_at_price FROM product_size_prices WHERE product_id = ? ORDER BY name COLLATE NOCASE ASC'
+);
+
+function attachSizes(product) {
+  if (!product) return product;
+  const sizes = getSizesForProduct.all(product.id);
+  return { ...product, sizes };
+}
+
+function parseSizesPayload(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  let arr;
+  try {
+    arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    const name = sanitizeStr(item.name, 50);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const price = parseInt(item.price);
+    if (isNaN(price) || price < 0) continue;
+    const compareAt = parseCompareAtPrice(item.compare_at_price ?? item.compareAtPrice);
+    out.push({ name, price, compare_at_price: compareAt });
+  }
+  return out;
+}
+
+const deleteSizesStmt = db.prepare('DELETE FROM product_size_prices WHERE product_id = ?');
+const insertSizeStmt = db.prepare(
+  'INSERT INTO product_size_prices (product_id, name, price, compare_at_price) VALUES (?, ?, ?, ?)'
+);
+
+function replaceSizesForProduct(productId, sizes) {
+  const tx = db.transaction(() => {
+    deleteSizesStmt.run(productId);
+    for (const s of sizes) {
+      insertSizeStmt.run(productId, s.name, s.price, s.compare_at_price);
+    }
+  });
+  tx();
+}
+
 router.get('/products', (req, res) => {
   const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
-  res.json(products);
+  res.json(products.map(attachSizes));
 });
 
 function parseCompareAtPrice(val) {
@@ -100,13 +151,22 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   const images = uploaded;
   const image = images[0] || '';
 
+  const parsedSizes = parseSizesPayload(req.body.sizes);
+  const effectiveSizeOptions = parsedSizes && parsedSizes.length > 0
+    ? parsedSizes.map(s => s.name).join(', ')
+    : size_options;
+
   const result = db.prepare(`
     INSERT INTO products (name, description, price, category, image, images, color_options, size_options, compare_at_price, is_new, is_best_seller)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(name, description, price, category, image, JSON.stringify(images), color_options, size_options, compare_at_price, is_new, is_best_seller);
+  `).run(name, description, price, category, image, JSON.stringify(images), color_options, effectiveSizeOptions, compare_at_price, is_new, is_best_seller);
+
+  if (parsedSizes && parsedSizes.length > 0) {
+    replaceSizesForProduct(result.lastInsertRowid, parsedSizes);
+  }
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(product);
+  res.status(201).json(attachSizes(product));
 });
 
 router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
@@ -140,12 +200,21 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
 
   const image = finalImages[0] || '';
 
+  const parsedSizes = parseSizesPayload(req.body.sizes);
+  const effectiveSizeOptions = parsedSizes
+    ? (parsedSizes.length > 0 ? parsedSizes.map(s => s.name).join(', ') : '')
+    : size_options;
+
   db.prepare(`
     UPDATE products SET name=?, description=?, price=?, category=?, image=?, images=?, color_options=?, size_options=?, compare_at_price=?, is_new=?, is_best_seller=?
     WHERE id=?
-  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, size_options, compare_at_price, is_new, is_best_seller, req.params.id);
+  `).run(name, description, price, category, image, JSON.stringify(finalImages), color_options, effectiveSizeOptions, compare_at_price, is_new, is_best_seller, req.params.id);
 
-  res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
+  if (parsedSizes !== null) {
+    replaceSizesForProduct(parseInt(req.params.id), parsedSizes);
+  }
+
+  res.json(attachSizes(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id)));
 });
 
 router.delete('/products/:id', (req, res) => {
@@ -158,6 +227,7 @@ router.delete('/products/:id', (req, res) => {
   if (allImages.length === 0 && existing.image) allImages.push(existing.image);
   for (const url of allImages) deleteLocalUpload(url);
 
+  deleteSizesStmt.run(req.params.id);
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
@@ -170,7 +240,7 @@ router.patch('/products/:id/toggle', (req, res) => {
 
   const newActive = existing.active === 1 ? 0 : 1;
   db.prepare('UPDATE products SET active = ? WHERE id = ?').run(newActive, req.params.id);
-  res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id));
+  res.json(attachSizes(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id)));
 });
 
 // === CATEGORÍAS ===
