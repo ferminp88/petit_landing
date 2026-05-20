@@ -114,7 +114,12 @@ function Store() {
   return (
     <div className={`min-h-screen flex flex-col ${announcement ? 'pt-24' : 'pt-16'}`}>
       {announcement && <AnnouncementBar messages={announcement.messages} speedSeconds={announcement.speedSeconds} />}
-      <Navbar onCartClick={() => setIsCartOpen(true)} topOffset={!!announcement} />
+      <Navbar
+        onCartClick={() => setIsCartOpen(true)}
+        topOffset={!!announcement}
+        categories={categories}
+        onSelectCategory={setCategory}
+      />
       <main className="flex-grow">
         <HeroCarousel banners={heroBanners} onSelectCategory={setCategory} />
         <FeaturedProducts

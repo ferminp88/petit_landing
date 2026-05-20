@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Instagram, Menu, X, Search } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ShoppingCart, Instagram, Menu, X, Search, ChevronDown } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
   onCartClick: () => void;
   topOffset?: boolean;
+  categories?: string[];
+  onSelectCategory?: (category: string) => void;
 }
 
 type NavLink = { label: string; targetId: string };
@@ -15,9 +17,26 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Contacto', targetId: 'contact' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false, categories = [], onSelectCategory }) => {
   const { totalItems, totalPrice } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [productsHover, setProductsHover] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+
+  const openProducts = () => {
+    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
+    setProductsHover(true);
+  };
+  const scheduleCloseProducts = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setProductsHover(false), 120);
+  };
+
+  const handleCategoryClick = (cat: string) => {
+    onSelectCategory?.(cat);
+    setProductsHover(false);
+    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <>
@@ -41,20 +60,84 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false }
           </div>
 
           <ul className="hidden md:flex items-center gap-7">
-            {NAV_LINKS.map(link => (
-              <li key={link.targetId}>
-                <a
-                  href={`#${link.targetId}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="text-xs uppercase tracking-[0.18em] font-bold text-white/90 hover:text-white transition-colors"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
+            {NAV_LINKS.map(link => {
+              if (link.targetId === 'products' && categories.length > 0) {
+                return (
+                  <li
+                    key={link.targetId}
+                    className="relative"
+                    onMouseEnter={openProducts}
+                    onMouseLeave={scheduleCloseProducts}
+                  >
+                    <a
+                      href="#products"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.18em] font-bold text-white/90 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${productsHover ? 'rotate-180' : ''}`} />
+                    </a>
+
+                    <AnimatePresence>
+                      {productsHover && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 6 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-72"
+                          onMouseEnter={openProducts}
+                          onMouseLeave={scheduleCloseProducts}
+                        >
+                          <div className="bg-white rounded-2xl shadow-2xl border border-mocha/10 p-3">
+                            <p className="px-3 py-2 text-[10px] uppercase tracking-[0.22em] font-bold text-mocha">
+                              Categorías
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleCategoryClick('Todos')}
+                              className="block w-full text-left px-3 py-2 rounded-xl text-sm font-bold text-ink hover:bg-bone transition-colors"
+                            >
+                              Ver todos
+                            </button>
+                            <div className="h-px bg-mocha/10 my-1" />
+                            <div className="max-h-[60vh] overflow-y-auto">
+                              {categories.map(cat => (
+                                <button
+                                  key={cat}
+                                  type="button"
+                                  onClick={() => handleCategoryClick(cat)}
+                                  className="block w-full text-left px-3 py-2 rounded-xl text-sm text-ink hover:bg-bone hover:text-petit transition-colors"
+                                >
+                                  {cat}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </li>
+                );
+              }
+              return (
+                <li key={link.targetId}>
+                  <a
+                    href={`#${link.targetId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById(link.targetId)?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="text-xs uppercase tracking-[0.18em] font-bold text-white/90 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="hidden md:flex flex-1 max-w-sm relative">
