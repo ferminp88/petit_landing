@@ -39,11 +39,11 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
 
   return (
     <section
-      className="w-full"
+      className="max-w-7xl mx-auto px-4 pt-6"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative w-full h-[380px] sm:h-[480px] md:h-[560px] lg:h-[640px] overflow-hidden bg-sand">
+      <div className="relative w-full h-[260px] sm:h-[320px] md:h-[380px] lg:h-[420px] rounded-3xl overflow-hidden bg-sand shadow-sm">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id}
@@ -80,7 +80,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
               </span>
             )}
             {current.title && (
-              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.05] mb-5 max-w-2xl">
+              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.05] mb-4 max-w-xl">
                 {current.title}
               </h1>
             )}
