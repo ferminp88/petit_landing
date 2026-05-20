@@ -125,7 +125,17 @@ db.exec(`
 
 const annoExists = db.prepare("SELECT 1 FROM announcement_bar WHERE id = 1").get();
 if (!annoExists) {
-  db.prepare(`INSERT INTO announcement_bar (id, messages, active, speed_seconds) VALUES (1, '[]', 0, 30)`).run();
+  db.prepare(`INSERT INTO announcement_bar (id, messages, active, speed_seconds) VALUES (1, '[]', 0, 15)`).run();
+}
+
+// Si quedo con la velocidad lenta inicial (30s), bajarla a 15s (idempotente)
+const ANNO_SPEED_MIG_VERSION = 1;
+const annoSpeedMigRow = db.prepare("SELECT value FROM migrations WHERE key = 'announcement_speed_bump'").get();
+if (!annoSpeedMigRow || annoSpeedMigRow.value < ANNO_SPEED_MIG_VERSION) {
+  db.prepare(`UPDATE announcement_bar SET speed_seconds = 15 WHERE id = 1 AND speed_seconds = 30`).run();
+  db.prepare(
+    "INSERT OR REPLACE INTO migrations (key, value, applied_at) VALUES ('announcement_speed_bump', ?, datetime('now'))"
+  ).run(ANNO_SPEED_MIG_VERSION);
 }
 
 function parseImagesJSON(val) {
