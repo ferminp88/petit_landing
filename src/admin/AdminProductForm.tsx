@@ -34,6 +34,8 @@ export function AdminProductForm() {
   interface SizeRow { name: string; price: string; compare_at_price: string }
   const [productSizes, setProductSizes] = useState<SizeRow[]>([]);
   const [colorImages, setColorImages] = useState<Record<string, string>>({});
+  const [colorFiles, setColorFiles] = useState<Record<string, File>>({});
+  const [colorPreviews, setColorPreviews] = useState<Record<string, string>>({});
   const [isNew, setIsNew] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
@@ -106,6 +108,36 @@ export function AdminProductForm() {
       newFilePreviews.forEach(url => URL.revokeObjectURL(url));
     };
   }, [newFilePreviews]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(colorPreviews).forEach((u: string) => URL.revokeObjectURL(u));
+    };
+  }, [colorPreviews]);
+
+  function pickColorFile(name: string, file: File) {
+    setColorFiles(prev => ({ ...prev, [name]: file }));
+    setColorPreviews(prev => {
+      if (prev[name]) URL.revokeObjectURL(prev[name]);
+      return { ...prev, [name]: URL.createObjectURL(file) };
+    });
+    setColorImages(prev => ({ ...prev, [name]: '' }));
+  }
+
+  function clearColorImage(name: string) {
+    setColorFiles(prev => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    setColorPreviews(prev => {
+      if (prev[name]) URL.revokeObjectURL(prev[name]);
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    setColorImages(prev => ({ ...prev, [name]: '' }));
+  }
 
   const colorList = useMemo(() => {
     return form.color_options
@@ -209,11 +241,20 @@ export function AdminProductForm() {
       price: Number(s.price),
       compare_at_price: s.compare_at_price ? Number(s.compare_at_price) : null,
     }))));
-    formData.append('colors', JSON.stringify(
-      colorList
-        .map(name => ({ name, image: (colorImages[name] || '').trim() }))
-        .filter(c => c.image)
-    ));
+    const colorsPayload: { name: string; image: string }[] = [];
+    let pendingIdx = 0;
+    for (const name of colorList) {
+      const file = colorFiles[name];
+      if (file) {
+        colorsPayload.push({ name, image: `pending:${pendingIdx}` });
+        formData.append('color_images', file);
+        pendingIdx++;
+      } else {
+        const url = (colorImages[name] || '').trim();
+        if (url) colorsPayload.push({ name, image: url });
+      }
+    }
+    formData.append('colors', JSON.stringify(colorsPayload));
     formData.append('is_new', isNew ? '1' : '0');
     formData.append('is_best_seller', isBestSeller ? '1' : '0');
     formData.append('existing_images', JSON.stringify(existingImages));
@@ -391,28 +432,49 @@ export function AdminProductForm() {
               </p>
               {colorList.map(name => {
                 const url = colorImages[name] || '';
+                const preview = colorPreviews[name];
+                const thumb = preview || url;
+                const hasImage = Boolean(thumb);
                 return (
                   <div key={name} className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
                     <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[80px] text-center">
                       {name}
                     </span>
-                    <input
-                      type="text"
-                      value={url}
-                      onChange={e => setColorImages(prev => ({ ...prev, [name]: e.target.value }))}
-                      placeholder="URL de la imagen (https://... o /uploads/...)"
-                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
-                    />
-                    {url ? (
-                      <img src={url} alt="" className="w-9 h-9 object-cover rounded-lg border border-slate-200" referrerPolicy="no-referrer" />
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold bg-white hover:border-pink-300 cursor-pointer transition-colors">
+                        <span>{hasImage ? 'Cambiar imagen' : 'Subir imagen'}</span>
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp"
+                          className="hidden"
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) pickColorFile(name, f);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      {hasImage && (
+                        <button
+                          type="button"
+                          onClick={() => clearColorImage(name)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Quitar imagen"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {hasImage ? (
+                      <img src={thumb} alt="" className="w-12 h-12 object-cover rounded-lg border border-slate-200" referrerPolicy="no-referrer" />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg border border-dashed border-slate-200" />
+                      <div className="w-12 h-12 rounded-lg border border-dashed border-slate-200" />
                     )}
                   </div>
                 );
               })}
               <p className="text-[10px] text-slate-400 mt-1">
-                Pegá una URL ya subida (las fotos del producto se ven arriba). Si el color no tiene imagen, se muestra la galería general.
+                Subí una imagen por color. Si el color no tiene imagen, se muestra la galería general del producto.
               </p>
             </div>
           )}

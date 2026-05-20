@@ -91,7 +91,7 @@ function attachSizes(product) {
   return { ...product, sizes, colors };
 }
 
-function parseColorsPayload(raw) {
+function parseColorsPayload(raw, colorFiles) {
   if (raw === undefined || raw === null || raw === '') return null;
   let arr;
   try {
@@ -100,6 +100,7 @@ function parseColorsPayload(raw) {
     return null;
   }
   if (!Array.isArray(arr)) return null;
+  const files = Array.isArray(colorFiles) ? colorFiles : [];
   const out = [];
   const seen = new Set();
   for (const item of arr) {
@@ -109,7 +110,13 @@ function parseColorsPayload(raw) {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    const image = sanitizeStr(item.image, 500);
+    let image = sanitizeStr(item.image, 500);
+    const m = image.match(/^pending:(\d+)$/);
+    if (m) {
+      const idx = parseInt(m[1], 10);
+      const file = files[idx];
+      image = file ? `/uploads/${file.filename}` : '';
+    }
     if (!image) continue;
     out.push({ name, image });
   }
@@ -195,7 +202,7 @@ function parseBool01(val) {
   return val === '1' || val === 1 || val === 'true' || val === true ? 1 : 0;
 }
 
-router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
+router.post('/products', upload.fields([{ name: 'images', maxCount: MAX_IMAGES_PER_PRODUCT }, { name: 'color_images', maxCount: 50 }]), (req, res) => {
   const name = sanitizeStr(req.body.name, 200);
   const description = sanitizeStr(req.body.description, 1000);
   const category = sanitizeStr(req.body.category, 100);
@@ -210,7 +217,9 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
     return res.status(400).json({ error: 'Nombre y precio válido son requeridos' });
   }
 
-  const uploaded = (req.files || []).map(f => `/uploads/${f.filename}`);
+  const productFiles = (req.files && req.files.images) || [];
+  const colorFiles = (req.files && req.files.color_images) || [];
+  const uploaded = productFiles.map(f => `/uploads/${f.filename}`);
   const images = uploaded;
   const image = images[0] || '';
 
@@ -228,7 +237,7 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
     replaceSizesForProduct(result.lastInsertRowid, parsedSizes);
   }
 
-  const parsedColors = parseColorsPayload(req.body.colors);
+  const parsedColors = parseColorsPayload(req.body.colors, colorFiles);
   if (parsedColors !== null) {
     replaceColorImagesForProduct(result.lastInsertRowid, parsedColors, color_options);
   }
@@ -237,7 +246,7 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
   res.status(201).json(attachSizes(product));
 });
 
-router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, res) => {
+router.put('/products/:id', upload.fields([{ name: 'images', maxCount: MAX_IMAGES_PER_PRODUCT }, { name: 'color_images', maxCount: 50 }]), (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
 
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
@@ -261,7 +270,9 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
   const kept = req.body.existing_images !== undefined
     ? parseImages(req.body.existing_images)
     : prevImages;
-  const uploaded = (req.files || []).map(f => `/uploads/${f.filename}`);
+  const productFiles = (req.files && req.files.images) || [];
+  const colorFiles = (req.files && req.files.color_images) || [];
+  const uploaded = productFiles.map(f => `/uploads/${f.filename}`);
   const finalImages = [...kept, ...uploaded].slice(0, MAX_IMAGES_PER_PRODUCT);
   const removed = prevImages.filter(img => !kept.includes(img));
   for (const oldUrl of removed) deleteLocalUpload(oldUrl);
@@ -282,7 +293,7 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
     replaceSizesForProduct(parseInt(req.params.id), parsedSizes);
   }
 
-  const parsedColors = parseColorsPayload(req.body.colors);
+  const parsedColors = parseColorsPayload(req.body.colors, colorFiles);
   if (parsedColors !== null) {
     replaceColorImagesForProduct(parseInt(req.params.id), parsedColors, color_options);
   }
