@@ -18,8 +18,8 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({ messages, spee
         className="marquee-track whitespace-nowrap text-[11px] uppercase tracking-[0.22em] font-bold"
         style={{ ['--marquee-duration' as any]: `${duration}s` }}
       >
-        <span className="pr-24">{joined}</span>
-        <span className="pr-24" aria-hidden="true">{joined}</span>
+        <span className="pr-[50vw]">{joined}</span>
+        <span className="pr-[50vw]" aria-hidden="true">{joined}</span>
       </div>
     </div>
   );
