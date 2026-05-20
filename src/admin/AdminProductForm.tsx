@@ -33,6 +33,7 @@ export function AdminProductForm() {
   });
   interface SizeRow { name: string; price: string; compare_at_price: string }
   const [productSizes, setProductSizes] = useState<SizeRow[]>([]);
+  const [colorImages, setColorImages] = useState<Record<string, string>>({});
   const [isNew, setIsNew] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
@@ -85,6 +86,13 @@ export function AdminProductForm() {
           compare_at_price: product.compare_at_price !== null && product.compare_at_price !== undefined ? String(product.compare_at_price) : '',
         })));
       }
+      if (Array.isArray((product as any).colors)) {
+        const map: Record<string, string> = {};
+        for (const c of (product as any).colors as { name: string; image: string | null }[]) {
+          if (c.image) map[c.name] = c.image;
+        }
+        setColorImages(map);
+      }
       setIsNew(product.is_new === 1);
       setIsBestSeller(product.is_best_seller === 1);
       const imgs = parseImagesJSON(product.images);
@@ -98,6 +106,13 @@ export function AdminProductForm() {
       newFilePreviews.forEach(url => URL.revokeObjectURL(url));
     };
   }, [newFilePreviews]);
+
+  const colorList = useMemo(() => {
+    return form.color_options
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+  }, [form.color_options]);
 
   const percentOff = useMemo(() => {
     const price = parseInt(form.price);
@@ -194,6 +209,11 @@ export function AdminProductForm() {
       price: Number(s.price),
       compare_at_price: s.compare_at_price ? Number(s.compare_at_price) : null,
     }))));
+    formData.append('colors', JSON.stringify(
+      colorList
+        .map(name => ({ name, image: (colorImages[name] || '').trim() }))
+        .filter(c => c.image)
+    ));
     formData.append('is_new', isNew ? '1' : '0');
     formData.append('is_best_seller', isBestSeller ? '1' : '0');
     formData.append('existing_images', JSON.stringify(existingImages));
@@ -363,6 +383,39 @@ export function AdminProductForm() {
             placeholder="Marrón, Negro, Natural"
           />
           <p className="text-[10px] text-slate-400 mt-1">Separados por coma</p>
+
+          {colorList.length > 0 && (
+            <div className="mt-3 space-y-2 bg-slate-50 rounded-xl p-3">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">
+                Imagen por color (opcional)
+              </p>
+              {colorList.map(name => {
+                const url = colorImages[name] || '';
+                return (
+                  <div key={name} className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                    <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[80px] text-center">
+                      {name}
+                    </span>
+                    <input
+                      type="text"
+                      value={url}
+                      onChange={e => setColorImages(prev => ({ ...prev, [name]: e.target.value }))}
+                      placeholder="URL de la imagen (https://... o /uploads/...)"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+                    />
+                    {url ? (
+                      <img src={url} alt="" className="w-9 h-9 object-cover rounded-lg border border-slate-200" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg border border-dashed border-slate-200" />
+                    )}
+                  </div>
+                );
+              })}
+              <p className="text-[10px] text-slate-400 mt-1">
+                Pegá una URL ya subida (las fotos del producto se ven arriba). Si el color no tiene imagen, se muestra la galería general.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>

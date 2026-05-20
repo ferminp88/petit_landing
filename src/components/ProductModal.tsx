@@ -41,6 +41,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     return [];
   }, [product.images, product.image]);
 
+  const colorImage = useMemo(() => {
+    const selected = selectedVariants.color;
+    if (!selected || !product.colors) return null;
+    const match = product.colors.find(c => c.name === selected);
+    return match?.image ?? null;
+  }, [product.colors, selectedVariants.color]);
+
+  const displayedImage = colorImage ?? images[currentIndex];
   const hasMultiple = images.length > 1;
 
   useEffect(() => { setCurrentIndex(0); }, [product.id]);
@@ -108,8 +116,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               >
                 <AnimatePresence mode="wait">
                   <motion.img
-                    key={currentIndex}
-                    src={images[currentIndex]}
+                    key={colorImage ?? currentIndex}
+                    src={displayedImage}
                     alt={`${product.name} ${currentIndex + 1}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -259,16 +267,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                           <button
                             key={s.name}
                             onClick={() => setSelectedVariants(prev => ({ ...prev, size: s.name }))}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex flex-col items-center leading-tight ${
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                               isSel
                                 ? 'bg-gradient text-white border-transparent shadow-md shadow-brand-magenta/20'
                                 : 'bg-white text-ink/70 border-mocha/25 hover:border-brand-magenta hover:text-brand-magenta'
                             }`}
                           >
-                            <span>{s.name}</span>
-                            <span className={`text-[10px] font-normal ${isSel ? 'text-white/90' : 'text-mocha'}`}>
-                              ${s.price.toLocaleString('es-AR')}
-                            </span>
+                            {s.name}
                           </button>
                         );
                       })}

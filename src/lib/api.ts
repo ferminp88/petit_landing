@@ -35,6 +35,9 @@ function mapProduct(raw: RawProduct): Product {
         .map(s => ({ name: s.name, price: s.price, compareAtPrice: s.compare_at_price ?? null }))
         .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
     : undefined;
+  const colors = Array.isArray(raw.colors) && raw.colors.length > 0
+    ? raw.colors.map(c => ({ name: c.name, image: c.image ? resolveUrl(c.image) : null }))
+    : undefined;
   return {
     id: String(raw.id),
     name: raw.name,
@@ -46,6 +49,7 @@ function mapProduct(raw: RawProduct): Product {
     images,
     variants: variants.length > 0 ? variants : undefined,
     sizes,
+    colors,
     isNew: raw.is_new === 1,
     isBestSeller: raw.is_best_seller === 1,
   };

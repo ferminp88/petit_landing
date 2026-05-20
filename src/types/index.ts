@@ -4,6 +4,11 @@ export interface ProductSize {
   compareAtPrice: number | null;
 }
 
+export interface ProductColor {
+  name: string;
+  image: string | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -18,6 +23,7 @@ export interface Product {
     options: string[];
   }[];
   sizes?: ProductSize[];
+  colors?: ProductColor[];
   isNew?: boolean;
   isBestSeller?: boolean;
 }
@@ -50,5 +56,6 @@ export interface RawProduct {
   is_new?: number;
   is_best_seller?: number;
   sizes?: { name: string; price: number; compare_at_price: number | null }[];
+  colors?: { name: string; image: string | null }[];
   created_at: string;
 }

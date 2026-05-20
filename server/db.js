@@ -83,6 +83,16 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS product_color_images (
+    product_id INTEGER NOT NULL,
+    color_name TEXT NOT NULL,
+    image_url  TEXT NOT NULL,
+    PRIMARY KEY (product_id, color_name),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS banners (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL CHECK (type IN ('category', 'promo')),

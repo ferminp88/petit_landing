@@ -69,10 +69,73 @@ const getSizesForProduct = db.prepare(
   'SELECT name, price, compare_at_price FROM product_size_prices WHERE product_id = ? ORDER BY name COLLATE NOCASE ASC'
 );
 
+const getColorImagesForProduct = db.prepare(
+  'SELECT color_name, image_url FROM product_color_images WHERE product_id = ?'
+);
+
+function buildColors(product) {
+  const names = String(product.color_options || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (names.length === 0) return [];
+  const rows = getColorImagesForProduct.all(product.id);
+  const map = new Map(rows.map(r => [r.color_name, r.image_url]));
+  return names.map(name => ({ name, image: map.get(name) || null }));
+}
+
 function attachSizes(product) {
   if (!product) return product;
   const sizes = getSizesForProduct.all(product.id);
-  return { ...product, sizes };
+  const colors = buildColors(product);
+  return { ...product, sizes, colors };
+}
+
+function parseColorsPayload(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  let arr;
+  try {
+    arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    const name = sanitizeStr(item.name, 50);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const image = sanitizeStr(item.image, 500);
+    if (!image) continue;
+    out.push({ name, image });
+  }
+  return out;
+}
+
+const deleteColorImagesStmt = db.prepare('DELETE FROM product_color_images WHERE product_id = ?');
+const insertColorImageStmt = db.prepare(
+  'INSERT INTO product_color_images (product_id, color_name, image_url) VALUES (?, ?, ?)'
+);
+
+function replaceColorImagesForProduct(productId, colors, colorOptionsCsv) {
+  const allowed = new Set(
+    String(colorOptionsCsv || '')
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const tx = db.transaction(() => {
+    deleteColorImagesStmt.run(productId);
+    for (const c of colors) {
+      if (allowed.size > 0 && !allowed.has(c.name.toLowerCase())) continue;
+      insertColorImageStmt.run(productId, c.name, c.image);
+    }
+  });
+  tx();
 }
 
 function parseSizesPayload(raw) {
@@ -165,6 +228,11 @@ router.post('/products', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req, r
     replaceSizesForProduct(result.lastInsertRowid, parsedSizes);
   }
 
+  const parsedColors = parseColorsPayload(req.body.colors);
+  if (parsedColors !== null) {
+    replaceColorImagesForProduct(result.lastInsertRowid, parsedColors, color_options);
+  }
+
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(attachSizes(product));
 });
@@ -214,6 +282,11 @@ router.put('/products/:id', upload.array('images', MAX_IMAGES_PER_PRODUCT), (req
     replaceSizesForProduct(parseInt(req.params.id), parsedSizes);
   }
 
+  const parsedColors = parseColorsPayload(req.body.colors);
+  if (parsedColors !== null) {
+    replaceColorImagesForProduct(parseInt(req.params.id), parsedColors, color_options);
+  }
+
   res.json(attachSizes(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id)));
 });
 
@@ -228,6 +301,7 @@ router.delete('/products/:id', (req, res) => {
   for (const url of allImages) deleteLocalUpload(url);
 
   deleteSizesStmt.run(req.params.id);
+  deleteColorImagesStmt.run(req.params.id);
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
