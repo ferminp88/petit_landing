@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Star, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart } from 'lucide-react';
 import { Product } from '../types';
 import { Card, CardContent, CardFooter } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
@@ -12,13 +12,10 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
-  const images = useMemo(() => {
-    if (product.images?.length) return product.images;
-    if (product.image) return [product.image];
-    return [];
+  const primary = useMemo(() => {
+    if (product.images?.length) return product.images[0];
+    return product.image || '';
   }, [product.images, product.image]);
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const sizes = product.sizes;
   const sizePrices = sizes?.map(s => s.price) ?? [];
@@ -33,17 +30,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
   const percentOff = hasDiscount
     ? Math.round((1 - displayPrice / (displayCompareAt as number)) * 100)
     : 0;
-
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex(prev => (prev + 1) % images.length);
-  };
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
-  };
-
-  const primary = images[currentImageIndex];
 
   return (
     <motion.div
@@ -61,56 +47,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
         <div className="relative aspect-square overflow-hidden bg-bone">
           {primary && (
             <motion.img
-              key={currentImageIndex}
               src={primary}
-              alt={`${product.name} - vista ${currentImageIndex + 1}`}
+              alt={product.name}
               className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
               referrerPolicy="no-referrer"
             />
-          )}
-
-          {images.length > 1 && (
-            <>
-              <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
-                  onClick={prevImage}
-                  aria-label="Imagen anterior"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
-                  onClick={nextImage}
-                  aria-label="Imagen siguiente"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-                {images.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex ? 'bg-primary w-4' : 'bg-primary/30 w-1.5'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentImageIndex(index);
-                    }}
-                    aria-label={`Ver imagen ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </>
           )}
 
           {/* Badges */}
