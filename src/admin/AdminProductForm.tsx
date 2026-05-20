@@ -401,7 +401,7 @@ export function AdminProductForm() {
                     Precio por talle
                   </p>
                   {productSizes.map(s => (
-                    <div key={s.name} className="grid grid-cols-[auto_1fr_1fr] items-center gap-2">
+                    <div key={s.name} className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2">
                       <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[60px] text-center">
                         {s.name}
                       </span>
@@ -417,10 +417,19 @@ export function AdminProductForm() {
                         type="number"
                         value={s.compare_at_price}
                         onChange={e => updateSizeField(s.name, 'compare_at_price', e.target.value)}
-                        placeholder="Precio anterior"
+                        placeholder="Precio anterior (Opcional)"
                         min="0"
                         className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
                       />
+                      <button
+                        type="button"
+                        onClick={() => toggleSize(s.name)}
+                        title="Quitar este talle"
+                        aria-label={`Quitar talle ${s.name}`}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                   <p className="text-[10px] text-slate-400 mt-1">
