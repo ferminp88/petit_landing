@@ -15,6 +15,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageManuallyChanged, setImageManuallyChanged] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     product.variants?.forEach(v => {
@@ -48,13 +49,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     return match?.image ?? null;
   }, [product.colors, selectedVariants.color]);
 
-  const displayedImage = colorImage ?? images[currentIndex];
+  const displayedImage = (!imageManuallyChanged && colorImage) ? colorImage : images[currentIndex];
   const hasMultiple = images.length > 1;
 
-  useEffect(() => { setCurrentIndex(0); }, [product.id]);
+  useEffect(() => { setCurrentIndex(0); setImageManuallyChanged(false); }, [product.id]);
 
-  const goNext = () => setCurrentIndex(i => (i + 1) % images.length);
-  const goPrev = () => setCurrentIndex(i => (i - 1 + images.length) % images.length);
+  const goNext = () => { setImageManuallyChanged(true); setCurrentIndex(i => (i + 1) % images.length); };
+  const goPrev = () => { setImageManuallyChanged(true); setCurrentIndex(i => (i - 1 + images.length) % images.length); };
+  const selectImage = (i: number) => { setImageManuallyChanged(true); setCurrentIndex(i); };
+
+  function selectColor(name: string) {
+    setSelectedVariants(prev => ({ ...prev, color: name }));
+    setImageManuallyChanged(false);
+  }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -109,7 +116,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     <button
                       key={`side-${img}-${i}`}
                       type="button"
-                      onClick={() => setCurrentIndex(i)}
+                      onClick={() => selectImage(i)}
                       className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
                         i === currentIndex && !colorImage
                           ? 'border-brand-magenta opacity-100'
@@ -176,7 +183,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     <button
                       key={`${img}-${i}`}
                       type="button"
-                      onClick={() => setCurrentIndex(i)}
+                      onClick={() => selectImage(i)}
                       className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors ${
                         i === currentIndex
                           ? 'border-brand-magenta opacity-100'
@@ -259,7 +266,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                       {variant.options.map((option) => (
                         <button
                           key={option}
-                          onClick={() => setSelectedVariants(prev => ({ ...prev, [variant.type]: option }))}
+                          onClick={() => variant.type === 'color' ? selectColor(option) : setSelectedVariants(prev => ({ ...prev, [variant.type]: option }))}
                           className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                             selectedVariants[variant.type] === option
                               ? 'bg-gradient text-white border-transparent shadow-md shadow-brand-magenta/20'
