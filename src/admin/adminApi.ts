@@ -78,6 +78,25 @@ export async function adminDeleteSize(id: number): Promise<void> {
   await jsonRequest(`/api/admin/sizes/${id}`, { method: 'DELETE' });
 }
 
+// === Metros ===
+export interface AdminMeter { id: number; name: string; sort_order: number }
+
+export async function adminFetchMeters(): Promise<AdminMeter[]> {
+  return jsonRequest<AdminMeter[]>('/api/admin/meters');
+}
+
+export async function adminCreateMeter(name: string): Promise<AdminMeter> {
+  return jsonRequest<AdminMeter>('/api/admin/meters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function adminDeleteMeter(id: number): Promise<void> {
+  await jsonRequest(`/api/admin/meters/${id}`, { method: 'DELETE' });
+}
+
 // === Announcement Bar ===
 export interface AdminAnnouncementBar {
   messages: string[];

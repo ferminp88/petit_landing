@@ -9,6 +9,17 @@ export interface ProductColor {
   image: string | null;
 }
 
+export interface ProductMeter {
+  name: string;
+}
+
+export interface VariantPrice {
+  size: string;        // '' si el producto no usa talles
+  meters: string;      // '' si el producto no usa metros
+  price: number;
+  compareAtPrice: number | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -24,6 +35,8 @@ export interface Product {
   }[];
   sizes?: ProductSize[];
   colors?: ProductColor[];
+  meters?: ProductMeter[];
+  priceMatrix?: VariantPrice[];
   isNew?: boolean;
   isBestSeller?: boolean;
 }
@@ -33,12 +46,19 @@ export interface CartItem extends Product {
   selectedVariants: Record<string, string>;
 }
 
-export type PaymentMethod = 'Transferencia' | 'Efectivo' | 'Mercado Pago';
+export type PaymentMethod = 'Transferencia' | 'Efectivo (solo para retiro en Villa Elisa)';
+export type EnvioOption = 'Retiro en Villa Elisa' | 'Envío por Correo Argentino' | 'Moto Mensajería';
 
 export interface CheckoutData {
   paymentMethod: PaymentMethod;
+  envio: EnvioOption;
   name: string;
+  locality: string;
+  email: string;
+  phone: string;
+  postalCode: string;
   address: string;
+  references: string;
 }
 
 export interface RawProduct {
@@ -57,5 +77,7 @@ export interface RawProduct {
   is_best_seller?: number;
   sizes?: { name: string; price: number; compare_at_price: number | null }[];
   colors?: { name: string; image: string | null }[];
+  meters?: { name: string }[];
+  price_matrix?: { size: string; meters: string; price: number; compare_at_price: number | null }[];
   created_at: string;
 }

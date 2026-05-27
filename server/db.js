@@ -92,6 +92,30 @@ db.exec(`
   )
 `);
 
+// Catálogo global de metrajes (espejo de sizes). sort_order numérico para ordenar.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS meters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    sort_order REAL NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+// Matriz de precios por combinación talle × metros.
+// size_name='' => producto sin talles ; meters_name='' => producto sin metros.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS product_variant_prices (
+    product_id INTEGER NOT NULL,
+    size_name   TEXT NOT NULL DEFAULT '',
+    meters_name TEXT NOT NULL DEFAULT '',
+    price INTEGER NOT NULL,
+    compare_at_price INTEGER,
+    PRIMARY KEY (product_id, size_name, meters_name),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  )
+`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS banners (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -238,6 +262,27 @@ if (!sizePricesMigRow || sizePricesMigRow.value < SIZE_PRICES_BACKFILL_VERSION) 
       }
     }
     markMig.run(SIZE_PRICES_BACKFILL_VERSION);
+  });
+  tx();
+}
+
+// Backfill product_variant_prices desde product_size_prices (idempotente)
+// Cada fila de talle pasa a la matriz con meters_name='' (sin metros).
+const VARIANT_PRICES_BACKFILL_VERSION = 1;
+const variantMigRow = db.prepare("SELECT value FROM migrations WHERE key = 'product_variant_prices_backfill'").get();
+if (!variantMigRow || variantMigRow.value < VARIANT_PRICES_BACKFILL_VERSION) {
+  const sizeRows = db.prepare('SELECT product_id, name, price, compare_at_price FROM product_size_prices').all();
+  const insertVariant = db.prepare(
+    "INSERT OR IGNORE INTO product_variant_prices (product_id, size_name, meters_name, price, compare_at_price) VALUES (?, ?, '', ?, ?)"
+  );
+  const markMig = db.prepare(
+    "INSERT OR REPLACE INTO migrations (key, value, applied_at) VALUES ('product_variant_prices_backfill', ?, datetime('now'))"
+  );
+  const tx = db.transaction(() => {
+    for (const r of sizeRows) {
+      insertVariant.run(r.product_id, r.name, r.price, r.compare_at_price);
+    }
+    markMig.run(VARIANT_PRICES_BACKFILL_VERSION);
   });
   tx();
 }

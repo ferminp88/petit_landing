@@ -38,6 +38,17 @@ function mapProduct(raw: RawProduct): Product {
   const colors = Array.isArray(raw.colors) && raw.colors.length > 0
     ? raw.colors.map(c => ({ name: c.name, image: c.image ? resolveUrl(c.image) : null }))
     : undefined;
+  const meters = Array.isArray(raw.meters) && raw.meters.length > 0
+    ? raw.meters.map(m => ({ name: m.name }))
+    : undefined;
+  const priceMatrix = Array.isArray(raw.price_matrix) && raw.price_matrix.length > 0
+    ? raw.price_matrix.map(r => ({
+        size: r.size,
+        meters: r.meters,
+        price: r.price,
+        compareAtPrice: r.compare_at_price ?? null,
+      }))
+    : undefined;
   return {
     id: String(raw.id),
     name: raw.name,
@@ -50,6 +61,8 @@ function mapProduct(raw: RawProduct): Product {
     variants: variants.length > 0 ? variants : undefined,
     sizes,
     colors,
+    meters,
+    priceMatrix,
     isNew: raw.is_new === 1,
     isBestSeller: raw.is_best_seller === 1,
   };

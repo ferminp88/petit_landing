@@ -284,7 +284,7 @@ export function AdminBanners() {
                   <Upload className="w-8 h-8 mb-2 opacity-50" />
                   <p className="text-sm font-medium">Subir imagen</p>
                   <p className="text-[10px] mt-1 opacity-70 text-center px-4">
-                    Recomendado apaisada 16:9 (ej. 1920×1080) · JPG/PNG/WEBP · máx. 5 MB
+                    Recomendado apaisada 16:9 (ej. 1920×1080) · JPG/PNG/WEBP · máx. 15 MB
                   </p>
                 </div>
               )}

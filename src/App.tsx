@@ -13,6 +13,7 @@ import { AdminProducts } from './admin/AdminProducts';
 import { AdminProductForm } from './admin/AdminProductForm';
 import { AdminCategories } from './admin/AdminCategories';
 import { AdminSizes } from './admin/AdminSizes';
+import { AdminMeters } from './admin/AdminMeters';
 import { AdminBanners } from './admin/AdminBanners';
 import { AdminAnnouncementBar } from './admin/AdminAnnouncementBar';
 import { fetchProducts, fetchBanners, fetchAnnouncementBar, PublicBanner, AnnouncementBarData } from './lib/api';
@@ -217,6 +218,7 @@ export default function App() {
       <Route path="/admin/products/:id/edit" element={<AdminGuard><AdminProductForm /></AdminGuard>} />
       <Route path="/admin/categories" element={<AdminGuard><AdminCategories /></AdminGuard>} />
       <Route path="/admin/sizes" element={<AdminGuard><AdminSizes /></AdminGuard>} />
+      <Route path="/admin/meters" element={<AdminGuard><AdminMeters /></AdminGuard>} />
       <Route path="/admin/banners" element={<AdminGuard><AdminBanners /></AdminGuard>} />
       <Route path="/admin/announcement-bar" element={<AdminGuard><AdminAnnouncementBar /></AdminGuard>} />
     </Routes>

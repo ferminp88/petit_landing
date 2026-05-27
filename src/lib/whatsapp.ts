@@ -1,12 +1,23 @@
-import { CartItem, PaymentMethod } from '../types';
+import { CartItem, PaymentMethod, EnvioOption } from '../types';
 
-export const WHATSAPP_NUMBER = '5491112345678'; // Reemplazar por el real
+export const WHATSAPP_NUMBER = '5492213990191';
+
+export interface CheckoutUserData {
+  name: string;
+  locality: string;
+  email: string;
+  phone: string;
+  postalCode: string;
+  address: string;
+  references: string;
+}
 
 export const generateWhatsAppLink = (
-  cart: CartItem[], 
-  totalPrice: number, 
+  cart: CartItem[],
+  totalPrice: number,
   paymentMethod: PaymentMethod,
-  userData: { name: string; address: string; dogWeight: string }
+  envio: EnvioOption,
+  userData: CheckoutUserData
 ) => {
   const itemsText = cart.map(item => {
     const variants = Object.entries(item.selectedVariants)
@@ -15,17 +26,27 @@ export const generateWhatsAppLink = (
     return `- ${item.name}${variants ? ` (${variants})` : ''} x${item.quantity}`;
   }).join('\n');
 
-  const message = `Hola! Quiero comprar los siguientes productos:
+  const lines = [
+    'Hola! Quiero comprar los siguientes productos:',
+    '',
+    itemsText,
+    '',
+    `Total: $${totalPrice}`,
+    '',
+    `Método de pago: ${paymentMethod}`,
+    `Envío: ${envio}`,
+    '',
+    `Nombre y apellido: ${userData.name}`,
+    `Localidad y provincia: ${userData.locality}`,
+    `Mail: ${userData.email}`,
+    `Celular: ${userData.phone}`,
+    `Código postal: ${userData.postalCode}`,
+    `Dirección completa: ${userData.address}`,
+  ];
 
-${itemsText}
+  if (userData.references.trim()) {
+    lines.push(`Referencias del domicilio: ${userData.references}`);
+  }
 
-Total: $${totalPrice}
-
-Método de pago: ${paymentMethod}
-
-Nombre: ${userData.name}
-Dirección de envío: ${userData.address}
-Peso del perro: ${userData.dogWeight} kg`;
-
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
 };

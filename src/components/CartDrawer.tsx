@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { PaymentMethod } from '../types';
+import { PaymentMethod, EnvioOption } from '../types';
 import { generateWhatsAppLink } from '../lib/whatsapp';
 
 interface CartDrawerProps {
@@ -10,19 +10,30 @@ interface CartDrawerProps {
   onClose: () => void;
 }
 
-const PAYMENT_METHODS: PaymentMethod[] = ['Mercado Pago', 'Transferencia', 'Efectivo'];
+const PAYMENT_METHODS: PaymentMethod[] = ['Transferencia', 'Efectivo (solo para retiro en Villa Elisa)'];
+const ENVIO_OPTIONS: EnvioOption[] = ['Retiro en Villa Elisa', 'Envío por Correo Argentino', 'Moto Mensajería'];
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { cart, totalPrice, updateQuantity, removeFromCart } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Mercado Pago');
-  const [userData, setUserData] = useState({ name: '', address: '', dogWeight: '' });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transferencia');
+  const [envio, setEnvio] = useState<EnvioOption>('Retiro en Villa Elisa');
+  const [userData, setUserData] = useState({
+    name: '',
+    locality: '',
+    email: '',
+    phone: '',
+    postalCode: '',
+    address: '',
+    references: '',
+  });
 
   const handleCheckout = () => {
-    if (!userData.name || !userData.address || !userData.dogWeight) {
-      alert('Por favor, completa tu nombre, dirección y el peso del perro.');
+    const { name, locality, email, phone, postalCode, address } = userData;
+    if (!name || !locality || !email || !phone || !postalCode || !address) {
+      alert('Por favor, completá todos los campos obligatorios del envío.');
       return;
     }
-    const link = generateWhatsAppLink(cart, totalPrice, paymentMethod, userData);
+    const link = generateWhatsAppLink(cart, totalPrice, paymentMethod, envio, userData);
     window.open(link, '_blank');
   };
 
@@ -146,31 +157,82 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.22em] font-medium text-mocha block mb-3">
+                        Envío
+                      </label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {ENVIO_OPTIONS.map((option) => (
+                          <button
+                            key={option}
+                            onClick={() => setEnvio(option)}
+                            className={`px-4 py-3 text-xs font-medium transition-colors border text-left flex items-center justify-between uppercase tracking-[0.18em] ${
+                              envio === option
+                                ? 'bg-ink text-bone border-ink'
+                                : 'bg-transparent text-ink/70 border-mocha/25 hover:border-ink hover:text-ink'
+                            }`}
+                          >
+                            {option}
+                            {envio === option && <span className="w-1.5 h-1.5 bg-bone rounded-full" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="space-y-3">
                       <label className="text-[10px] uppercase tracking-[0.22em] font-medium text-mocha block">
                         Tus datos para el envío
                       </label>
                       <input
                         type="text"
-                        placeholder="Nombre completo"
+                        placeholder="Nombre y apellido"
                         value={userData.name}
                         onChange={e => setUserData(prev => ({ ...prev, name: e.target.value }))}
                         className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
                       />
                       <input
                         type="text"
-                        placeholder="Dirección de envío"
-                        value={userData.address}
-                        onChange={e => setUserData(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Localidad y provincia"
+                        value={userData.locality}
+                        onChange={e => setUserData(prev => ({ ...prev, locality: e.target.value }))}
+                        className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
+                      />
+                      <input
+                        type="email"
+                        placeholder="Mail"
+                        value={userData.email}
+                        onChange={e => setUserData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
+                      />
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="Celular"
+                        value={userData.phone}
+                        onChange={e => setUserData(prev => ({ ...prev, phone: e.target.value }))}
                         className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
                       />
                       <input
                         type="text"
-                        inputMode="decimal"
-                        placeholder="Peso del perro (kg)"
-                        value={userData.dogWeight}
-                        onChange={e => setUserData(prev => ({ ...prev, dogWeight: e.target.value }))}
+                        inputMode="numeric"
+                        placeholder="Código postal"
+                        value={userData.postalCode}
+                        onChange={e => setUserData(prev => ({ ...prev, postalCode: e.target.value }))}
                         className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Dirección completa (si es depto, aclarar piso y número)"
+                        value={userData.address}
+                        onChange={e => setUserData(prev => ({ ...prev, address: e.target.value }))}
+                        className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60"
+                      />
+                      <textarea
+                        placeholder="Referencias del domicilio (opcional)"
+                        value={userData.references}
+                        onChange={e => setUserData(prev => ({ ...prev, references: e.target.value }))}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-transparent border border-mocha/25 focus:outline-none focus:border-ink text-sm placeholder:text-mocha/60 resize-none"
                       />
                     </div>
                   </div>
@@ -180,9 +242,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
             {cart.length > 0 && (
               <div className="px-6 py-5 bg-bone border-t border-mocha/10 space-y-4">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[10px] uppercase tracking-[0.22em] font-medium text-mocha">Total</span>
-                  <span className="font-display text-2xl text-ink">
+                <div className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-gradient text-white shadow-lg shadow-brand-magenta/25">
+                  <span className="text-xs uppercase tracking-[0.22em] font-bold">Total</span>
+                  <span className="font-display font-bold text-3xl leading-none">
                     ${totalPrice.toLocaleString('es-AR')}
                   </span>
                 </div>

@@ -17,6 +17,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const [quantity, setQuantity] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageManuallyChanged, setImageManuallyChanged] = useState(false);
+  const meters = product.meters ?? [];
+  const hasMeters = meters.length > 0;
+  const matrix = product.priceMatrix ?? [];
+
+  const findCell = (size: string, mtr: string) =>
+    matrix.find(r => r.size === size && r.meters === mtr) ?? null;
+
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     product.variants?.forEach(v => {
@@ -25,6 +32,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     });
     if (product.sizes && product.sizes.length > 0) {
       initial.size = sortBySize<ProductSize>(product.sizes, s => s.name)[0].name;
+    }
+    if (hasMeters) {
+      const firstSize = product.sizes && product.sizes.length > 0
+        ? sortBySize<ProductSize>(product.sizes, s => s.name)[0].name
+        : '';
+      const firstOk = meters.find(m => findCell(firstSize, m.name)) ?? meters[0];
+      initial.meters = firstOk.name;
     }
     return initial;
   });
@@ -39,8 +53,23 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     return sortedSizes.find(s => s.name === selectedVariants.size) ?? sortedSizes[0];
   }, [sortedSizes, selectedVariants.size]);
 
-  const effectivePrice = selectedSize ? selectedSize.price : product.price;
-  const effectiveCompareAt = selectedSize ? selectedSize.compareAtPrice : product.compareAtPrice;
+  const currentSizeName = sortedSizes.length > 0 ? (selectedSize?.name ?? '') : '';
+  const currentMeters = hasMeters ? (selectedVariants.meters ?? '') : '';
+
+  const currentCell = useMemo(
+    () => (matrix.length > 0 ? findCell(currentSizeName, currentMeters) : null),
+    [matrix, currentSizeName, currentMeters]
+  );
+
+  // Cuando hay metros, la matriz determina el precio; si no, el talle (comportamiento previo).
+  const effectivePrice = hasMeters
+    ? (currentCell ? currentCell.price : product.price)
+    : (selectedSize ? selectedSize.price : product.price);
+  const effectiveCompareAt = hasMeters
+    ? (currentCell ? currentCell.compareAtPrice : product.compareAtPrice)
+    : (selectedSize ? selectedSize.compareAtPrice : product.compareAtPrice);
+
+  const comboAvailable = !hasMeters || currentCell !== null;
 
   const images = useMemo(() => {
     if (product.images?.length) return product.images;
@@ -69,6 +98,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     setImageManuallyChanged(false);
   }
 
+  function selectSize(name: string) {
+    setSelectedVariants(prev => {
+      const next = { ...prev, size: name };
+      // Si el metraje actual no existe para este talle, pasar al primero disponible.
+      if (hasMeters && !findCell(name, prev.meters ?? '')) {
+        const firstOk = meters.find(m => findCell(name, m.name));
+        if (firstOk) next.meters = firstOk.name;
+      }
+      return next;
+    });
+  }
+
+  function selectMeters(name: string) {
+    setSelectedVariants(prev => ({ ...prev, meters: name }));
+  }
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
@@ -81,9 +126,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   }, [hasMultiple, images.length]);
 
   const handleAdd = () => {
-    const productForCart = selectedSize
-      ? { ...product, price: selectedSize.price, compareAtPrice: selectedSize.compareAtPrice }
-      : product;
+    if (!comboAvailable) return;
+    const productForCart = { ...product, price: effectivePrice, compareAtPrice: effectiveCompareAt };
     addToCart(productForCart, selectedVariants, quantity);
     onClose();
   };
@@ -293,15 +337,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {sortedSizes.map((s) => {
-                        const isSel = selectedVariants.size === s.name;
+                        const isSel = currentSizeName === s.name;
+                        const unavailable = hasMeters && !findCell(s.name, currentMeters);
                         return (
                           <button
                             key={s.name}
-                            onClick={() => setSelectedVariants(prev => ({ ...prev, size: s.name }))}
+                            onClick={() => selectSize(s.name)}
                             className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                               isSel
                                 ? 'bg-gradient text-white border-transparent shadow-md shadow-brand-magenta/20'
-                                : 'bg-white text-ink/70 border-mocha/25 hover:border-brand-magenta hover:text-brand-magenta'
+                                : unavailable
+                                  ? 'bg-bone text-ink/30 border-mocha/15 line-through'
+                                  : 'bg-white text-ink/70 border-mocha/25 hover:border-brand-magenta hover:text-brand-magenta'
                             }`}
                           >
                             {s.name}
@@ -309,6 +356,41 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                         );
                       })}
                     </div>
+                  </div>
+                )}
+
+                {hasMeters && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha mb-2">
+                      Elegí metros
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {meters.map((m) => {
+                        const isSel = currentMeters === m.name;
+                        const unavailable = !findCell(currentSizeName, m.name);
+                        return (
+                          <button
+                            key={m.name}
+                            onClick={() => selectMeters(m.name)}
+                            disabled={unavailable}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                              isSel
+                                ? 'bg-gradient text-white border-transparent shadow-md shadow-brand-magenta/20'
+                                : unavailable
+                                  ? 'bg-bone text-ink/30 border-mocha/15 line-through cursor-not-allowed'
+                                  : 'bg-white text-ink/70 border-mocha/25 hover:border-brand-magenta hover:text-brand-magenta'
+                            }`}
+                          >
+                            {m.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {!comboAvailable && (
+                      <p className="text-[11px] text-red-500 font-medium mt-2">
+                        Esta combinación no está disponible. Elegí otra.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -334,9 +416,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
                 <button
                   onClick={handleAdd}
-                  className="flex-1 h-12 bg-gradient text-white rounded-full font-bold tracking-wide text-sm hover:brightness-110 transition-all shadow-lg shadow-brand-magenta/25"
+                  disabled={!comboAvailable}
+                  className="flex-1 h-12 bg-gradient text-white rounded-full font-bold tracking-wide text-sm hover:brightness-110 transition-all shadow-lg shadow-brand-magenta/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100"
                 >
-                  Agregar al carrito
+                  {comboAvailable ? 'Agregar al carrito' : 'No disponible'}
                 </button>
 
                 <button

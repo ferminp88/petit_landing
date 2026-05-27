@@ -17,6 +17,10 @@ interface ImageCropperProps {
   onCancel: () => void;
 }
 
+// Tope de dimensión del lado mayor. Mantiene buena calidad sin generar archivos enormes.
+const MAX_OUTPUT_DIMENSION = 2048;
+const JPEG_QUALITY = 0.95;
+
 async function getCroppedFile(srcUrl: string, area: Area, originalName: string, mime: string): Promise<File> {
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const el = new Image();
@@ -24,14 +28,29 @@ async function getCroppedFile(srcUrl: string, area: Area, originalName: string, 
     el.onerror = reject;
     el.src = srcUrl;
   });
+
+  // Resolución del recorte en píxeles reales del original.
+  const cropW = Math.round(area.width);
+  const cropH = Math.round(area.height);
+
+  // Solo achicamos si el recorte supera el tope; nunca agrandamos (evita pixelar más).
+  const longSide = Math.max(cropW, cropH);
+  const scale = longSide > MAX_OUTPUT_DIMENSION ? MAX_OUTPUT_DIMENSION / longSide : 1;
+  const outW = Math.max(1, Math.round(cropW * scale));
+  const outH = Math.max(1, Math.round(cropH * scale));
+
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(area.width);
-  canvas.height = Math.round(area.height);
+  canvas.width = outW;
+  canvas.height = outH;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas');
-  ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, outW, outH);
+
+  // PNG es sin pérdida (ignora el quality); JPEG/WEBP usan calidad alta.
   const blob: Blob = await new Promise((resolve, reject) => {
-    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('blob'))), mime, 0.92);
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('blob'))), mime, JPEG_QUALITY);
   });
   const ext = mime === 'image/png' ? '.png' : mime === 'image/webp' ? '.webp' : '.jpg';
   const baseName = originalName.replace(/\.[^.]+$/, '');

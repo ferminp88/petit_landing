@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Package, Tag, Ruler, Menu, X, Sparkles, ExternalLink, Image as ImageIcon, Megaphone } from 'lucide-react';
+import { LogOut, Package, Tag, Ruler, MoveHorizontal, Menu, X, Sparkles, ExternalLink, Image as ImageIcon, Megaphone } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
-type NavColor = 'magenta' | 'orange' | 'sky' | 'violet' | 'emerald';
+type NavColor = 'magenta' | 'orange' | 'sky' | 'violet' | 'emerald' | 'teal';
 
 interface NavItem {
   to: string;
@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/products', label: 'Productos', icon: Package, color: 'magenta' },
   { to: '/admin/categories', label: 'Categorías', icon: Tag, color: 'orange' },
   { to: '/admin/sizes', label: 'Talles', icon: Ruler, color: 'sky' },
+  { to: '/admin/meters', label: 'Metros', icon: MoveHorizontal, color: 'teal' },
   { to: '/admin/banners', label: 'Banners', icon: ImageIcon, color: 'emerald' },
   { to: '/admin/announcement-bar', label: 'Franja superior', icon: Megaphone, color: 'violet' },
 ];
@@ -50,6 +51,12 @@ const COLOR_STYLES: Record<NavColor, { active: string; inactive: string; iconBg:
     inactive: 'text-slate-600 hover:bg-emerald-50/50 hover:text-emerald-700',
     iconBg: 'bg-emerald-100',
     iconText: 'text-emerald-600',
+  },
+  teal: {
+    active: 'bg-teal-50 text-teal-700',
+    inactive: 'text-slate-600 hover:bg-teal-50/50 hover:text-teal-700',
+    iconBg: 'bg-teal-100',
+    iconText: 'text-teal-600',
   },
 };
 

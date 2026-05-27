@@ -3,13 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Star } from 'lucide-react';
 import {
   adminCreateProduct, adminUpdateProduct, adminFetchProducts,
-  adminFetchCategories, adminFetchSizes,
-  AdminCategory, AdminSize,
+  adminFetchCategories, adminFetchSizes, adminFetchMeters,
+  AdminCategory, AdminSize, AdminMeter,
 } from './adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { AdminShell } from './AdminShell';
 import { ImageCropper } from '../components/ImageCropper';
 import { compareSizeNames, sortBySize } from '../utils/sizeOrder';
+
+// Clave de una celda de la matriz talle×metros. '' indica dimensión ausente.
+function comboKey(size: string, meters: string) {
+  return `${size}|${meters}`;
+}
 
 const MAX_IMAGES = 10;
 
@@ -33,8 +38,12 @@ export function AdminProductForm() {
   const [form, setForm] = useState({
     name: '', description: '', price: '', compare_at_price: '', category: '', color_options: '',
   });
-  interface SizeRow { name: string; price: string; compare_at_price: string }
-  const [productSizes, setProductSizes] = useState<SizeRow[]>([]);
+  // Talles y metros seleccionados (nombres). Los precios viven en `cells`.
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedMeters, setSelectedMeters] = useState<string[]>([]);
+  // Precio por combinación, key = comboKey(size, meters). Celda vacía = no disponible.
+  interface Cell { price: string; compareAt: string }
+  const [cells, setCells] = useState<Record<string, Cell>>({});
   const [colorImages, setColorImages] = useState<Record<string, string>>({});
   const [colorFiles, setColorFiles] = useState<Record<string, File>>({});
   const [colorPreviews, setColorPreviews] = useState<Record<string, string>>({});
@@ -44,6 +53,7 @@ export function AdminProductForm() {
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
   const [allSizes, setAllSizes] = useState<AdminSize[]>([]);
+  const [allMeters, setAllMeters] = useState<AdminMeter[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFilePreviews, setNewFilePreviews] = useState<string[]>([]);
@@ -51,10 +61,11 @@ export function AdminProductForm() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([adminFetchCategories(), adminFetchSizes()])
-      .then(([cats, sizes]) => {
+    Promise.all([adminFetchCategories(), adminFetchSizes(), adminFetchMeters()])
+      .then(([cats, sizes, meters]) => {
         setAllCategories(cats);
         setAllSizes(sizes);
+        setAllMeters(meters);
       })
       .catch((err: any) => {
         if (err.message === 'UNAUTHORIZED') { logout(); navigate('/admin/login'); }
@@ -74,22 +85,47 @@ export function AdminProductForm() {
         category: product.category || '',
         color_options: product.color_options || '',
       });
-      if (Array.isArray(product.sizes) && product.sizes.length > 0) {
-        setProductSizes(
-          sortBySize(product.sizes, s => s.name)
-            .map(s => ({
-              name: s.name,
-              price: String(s.price),
-              compare_at_price: s.compare_at_price !== null && s.compare_at_price !== undefined ? String(s.compare_at_price) : '',
-            }))
-        );
+      const metersFromCatalog = Array.isArray(product.meters) ? product.meters.map(m => m.name) : [];
+      const matrix = Array.isArray(product.price_matrix) ? product.price_matrix : [];
+
+      if (matrix.length > 0) {
+        const sizeSet = new Set<string>();
+        const meterSet = new Set<string>(metersFromCatalog);
+        const nextCells: Record<string, Cell> = {};
+        for (const r of matrix) {
+          if (r.size) sizeSet.add(r.size);
+          if (r.meters) meterSet.add(r.meters);
+          nextCells[comboKey(r.size, r.meters)] = {
+            price: String(r.price),
+            compareAt: r.compare_at_price !== null && r.compare_at_price !== undefined ? String(r.compare_at_price) : '',
+          };
+        }
+        setSelectedSizes([...sizeSet]);
+        setSelectedMeters([...meterSet]);
+        setCells(nextCells);
+      } else if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+        const nextCells: Record<string, Cell> = {};
+        for (const s of product.sizes) {
+          nextCells[comboKey(s.name, '')] = {
+            price: String(s.price),
+            compareAt: s.compare_at_price !== null && s.compare_at_price !== undefined ? String(s.compare_at_price) : '',
+          };
+        }
+        setSelectedSizes(product.sizes.map(s => s.name));
+        setSelectedMeters(metersFromCatalog);
+        setCells(nextCells);
       } else {
         const existingSizes = String(product.size_options || '').split(',').map(s => s.trim()).filter(Boolean);
-        setProductSizes(existingSizes.map(name => ({
-          name,
-          price: String(product.price),
-          compare_at_price: product.compare_at_price !== null && product.compare_at_price !== undefined ? String(product.compare_at_price) : '',
-        })));
+        const nextCells: Record<string, Cell> = {};
+        for (const name of existingSizes) {
+          nextCells[comboKey(name, '')] = {
+            price: String(product.price),
+            compareAt: product.compare_at_price !== null && product.compare_at_price !== undefined ? String(product.compare_at_price) : '',
+          };
+        }
+        setSelectedSizes(existingSizes);
+        setSelectedMeters(metersFromCatalog);
+        setCells(nextCells);
       }
       if (Array.isArray((product as any).colors)) {
         const map: Record<string, string> = {};
@@ -200,21 +236,54 @@ export function AdminProductForm() {
   }
 
   function toggleSize(name: string) {
-    setProductSizes(prev => {
-      const exists = prev.find(s => s.name === name);
-      if (exists) return prev.filter(s => s.name !== name);
-      const next: SizeRow = {
-        name,
-        price: form.price || '',
-        compare_at_price: form.compare_at_price || '',
-      };
-      return [...prev, next].sort((a, b) => compareSizeNames(a.name, b.name));
-    });
+    setSelectedSizes(prev =>
+      prev.includes(name)
+        ? prev.filter(s => s !== name)
+        : [...prev, name].sort(compareSizeNames)
+    );
   }
 
-  function updateSizeField(name: string, field: 'price' | 'compare_at_price', value: string) {
-    setProductSizes(prev => prev.map(s => s.name === name ? { ...s, [field]: value } : s));
+  function toggleMeter(name: string) {
+    setSelectedMeters(prev =>
+      prev.includes(name) ? prev.filter(m => m !== name) : [...prev, name]
+    );
   }
+
+  function updateCell(size: string, meters: string, field: keyof Cell, value: string) {
+    const key = comboKey(size, meters);
+    setCells(prev => ({
+      ...prev,
+      [key]: { price: '', compareAt: '', ...prev[key], [field]: value },
+    }));
+  }
+
+  // Metros ordenados según el catálogo (que ya viene por sort_order).
+  const sortedSelectedMeters = useMemo(() => {
+    const order = allMeters.map(m => m.name);
+    return [...selectedMeters].sort((a, b) => {
+      const ia = order.indexOf(a); const ib = order.indexOf(b);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+  }, [selectedMeters, allMeters]);
+
+  const sortedSelectedSizes = useMemo(
+    () => [...selectedSizes].sort(compareSizeNames),
+    [selectedSizes]
+  );
+
+  // Combinaciones a editar según las dimensiones activas.
+  const combos = useMemo<{ size: string; meters: string }[]>(() => {
+    const sizes = sortedSelectedSizes;
+    const meters = sortedSelectedMeters;
+    if (sizes.length > 0 && meters.length > 0) {
+      return sizes.flatMap(s => meters.map(m => ({ size: s, meters: m })));
+    }
+    if (sizes.length > 0) return sizes.map(s => ({ size: s, meters: '' }));
+    if (meters.length > 0) return meters.map(m => ({ size: '', meters: m }));
+    return [];
+  }, [sortedSelectedSizes, sortedSelectedMeters]);
+
+  const hasMatrix = sortedSelectedSizes.length > 0 && sortedSelectedMeters.length > 0;
 
   const totalImages = existingImages.length + newFiles.length;
   const canAddMore = totalImages < MAX_IMAGES;
@@ -225,16 +294,44 @@ export function AdminProductForm() {
     if (!form.price || isNaN(Number(form.price))) { setError('El precio debe ser un número'); return; }
     if (form.compare_at_price && isNaN(Number(form.compare_at_price))) { setError('El precio anterior debe ser un número'); return; }
 
-    for (const s of productSizes) {
-      if (!s.price || isNaN(Number(s.price)) || Number(s.price) < 0) {
-        setError(`El precio del talle "${s.name}" es inválido`);
+    const comboLabel = (c: { size: string; meters: string }) =>
+      [c.size, c.meters].filter(Boolean).join(' + ') || 'producto';
+
+    for (const c of combos) {
+      const cell = cells[comboKey(c.size, c.meters)];
+      const price = cell?.price ?? '';
+      if (price === '') {
+        if (!hasMatrix) { setError(`Falta el precio de "${comboLabel(c)}"`); return; }
+        continue; // en matriz, celda vacía = combinación no disponible
+      }
+      if (isNaN(Number(price)) || Number(price) < 0) {
+        setError(`El precio de "${comboLabel(c)}" es inválido`);
         return;
       }
-      if (s.compare_at_price && isNaN(Number(s.compare_at_price))) {
-        setError(`El precio anterior del talle "${s.name}" es inválido`);
+      if (cell?.compareAt && isNaN(Number(cell.compareAt))) {
+        setError(`El precio anterior de "${comboLabel(c)}" es inválido`);
         return;
       }
     }
+
+    const matrixPayload = combos
+      .map(c => ({ size: c.size, meters: c.meters, cell: cells[comboKey(c.size, c.meters)] }))
+      .filter(x => x.cell && x.cell.price !== '' && !isNaN(Number(x.cell.price)) && Number(x.cell.price) >= 0)
+      .map(x => ({
+        size: x.size,
+        meters: x.meters,
+        price: Number(x.cell!.price),
+        compare_at_price: x.cell!.compareAt ? Number(x.cell!.compareAt) : null,
+      }));
+
+    if (hasMatrix && matrixPayload.length === 0) {
+      setError('Cargá el precio de al menos una combinación talle + metros');
+      return;
+    }
+
+    const sizesPayload = matrixPayload
+      .filter(r => r.meters === '')
+      .map(r => ({ name: r.size, price: r.price, compare_at_price: r.compare_at_price }));
 
     setError('');
     setLoading(true);
@@ -246,12 +343,9 @@ export function AdminProductForm() {
     formData.append('compare_at_price', form.compare_at_price || '');
     formData.append('category', form.category.trim());
     formData.append('color_options', form.color_options.trim());
-    formData.append('size_options', productSizes.map(s => s.name).join(', '));
-    formData.append('sizes', JSON.stringify(productSizes.map(s => ({
-      name: s.name,
-      price: Number(s.price),
-      compare_at_price: s.compare_at_price ? Number(s.compare_at_price) : null,
-    }))));
+    formData.append('size_options', sortedSelectedSizes.join(', '));
+    formData.append('sizes', JSON.stringify(sizesPayload));
+    formData.append('price_matrix', JSON.stringify(matrixPayload));
     const colorsPayload: { name: string; image: string }[] = [];
     let pendingIdx = 0;
     for (const name of colorList) {
@@ -368,7 +462,7 @@ export function AdminProductForm() {
               <div className="text-slate-400">
                 <Upload className="w-7 h-7 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">{totalImages === 0 ? 'Tocá para subir fotos' : 'Agregar más fotos'}</p>
-                <p className="text-xs mt-1 opacity-70">JPG, PNG, WEBP — máx. 5MB c/u — hasta {MAX_IMAGES} fotos</p>
+                <p className="text-xs mt-1 opacity-70">JPG, PNG, WEBP — máx. 15MB c/u — hasta {MAX_IMAGES} fotos</p>
               </div>
             </div>
           )}
@@ -513,79 +607,108 @@ export function AdminProductForm() {
 
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-            Talles (opcional) {productSizes.length > 0 && <span className="text-pink-500">— {productSizes.length} seleccionado{productSizes.length === 1 ? '' : 's'}</span>}
+            Talles (opcional) {selectedSizes.length > 0 && <span className="text-pink-500">— {selectedSizes.length} seleccionado{selectedSizes.length === 1 ? '' : 's'}</span>}
           </label>
           {allSizes.length === 0 ? (
             <p className="text-[11px] text-slate-400">
               Aún no hay talles. Creá los primeros en <button type="button" onClick={() => navigate('/admin/sizes')} className="text-pink-500 underline">Talles</button>.
             </p>
           ) : (
-            <>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {sortBySize<AdminSize>(allSizes, s => s.name).map(s => {
-                  const isSelected = productSizes.some(ps => ps.name === s.name);
-                  return (
-                    <button
-                      type="button"
-                      key={s.id}
-                      onClick={() => toggleSize(s.name)}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                        isSelected
-                          ? 'bg-pink-500 text-white border-pink-500'
-                          : 'bg-white text-slate-600 border-slate-200 hover:border-pink-300'
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {productSizes.length > 0 && (
-                <div className="space-y-2 bg-slate-50 rounded-xl p-3">
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">
-                    Precio por talle
-                  </p>
-                  {productSizes.map(s => (
-                    <div key={s.name} className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2">
-                      <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[60px] text-center">
-                        {s.name}
-                      </span>
-                      <input
-                        type="number"
-                        value={s.price}
-                        onChange={e => updateSizeField(s.name, 'price', e.target.value)}
-                        placeholder="Precio *"
-                        min="0"
-                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
-                      />
-                      <input
-                        type="number"
-                        value={s.compare_at_price}
-                        onChange={e => updateSizeField(s.name, 'compare_at_price', e.target.value)}
-                        placeholder="Precio anterior (Opcional)"
-                        min="0"
-                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleSize(s.name)}
-                        title="Quitar este talle"
-                        aria-label={`Quitar talle ${s.name}`}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Cada talle puede tener su propio precio y precio anterior (opcional).
-                  </p>
-                </div>
-              )}
-            </>
+            <div className="flex flex-wrap gap-2">
+              {sortBySize<AdminSize>(allSizes, s => s.name).map(s => {
+                const isSelected = selectedSizes.includes(s.name);
+                return (
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => toggleSize(s.name)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      isSelected
+                        ? 'bg-pink-500 text-white border-pink-500'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-pink-300'
+                    }`}
+                  >
+                    {s.name}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+            Metros (opcional) {selectedMeters.length > 0 && <span className="text-teal-500">— {selectedMeters.length} seleccionado{selectedMeters.length === 1 ? '' : 's'}</span>}
+          </label>
+          {allMeters.length === 0 ? (
+            <p className="text-[11px] text-slate-400">
+              Aún no hay metrajes. Creá los primeros en <button type="button" onClick={() => navigate('/admin/meters')} className="text-teal-500 underline">Metros</button>.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {allMeters.map(m => {
+                const isSelected = selectedMeters.includes(m.name);
+                return (
+                  <button
+                    type="button"
+                    key={m.id}
+                    onClick={() => toggleMeter(m.name)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      isSelected
+                        ? 'bg-teal-500 text-white border-teal-500'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-teal-300'
+                    }`}
+                  >
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {combos.length > 0 && (
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+              {hasMatrix ? 'Precio por combinación talle + metros' : sortedSelectedSizes.length > 0 ? 'Precio por talle' : 'Precio por metraje'}
+            </label>
+            <div className="space-y-2 bg-slate-50 rounded-xl p-3">
+              {combos.map(c => {
+                const key = comboKey(c.size, c.meters);
+                const cell = cells[key] || { price: '', compareAt: '' };
+                const label = [c.size, c.meters].filter(Boolean).join(' + ');
+                return (
+                  <div key={key} className="grid grid-cols-[auto_1fr_1fr] items-center gap-2">
+                    <span className="px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg min-w-[90px] text-center">
+                      {label}
+                    </span>
+                    <input
+                      type="number"
+                      value={cell.price}
+                      onChange={e => updateCell(c.size, c.meters, 'price', e.target.value)}
+                      placeholder={hasMatrix ? 'Precio (vacío = no disp.)' : 'Precio *'}
+                      min="0"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+                    />
+                    <input
+                      type="number"
+                      value={cell.compareAt}
+                      onChange={e => updateCell(c.size, c.meters, 'compareAt', e.target.value)}
+                      placeholder="Precio anterior (Opcional)"
+                      min="0"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+                    />
+                  </div>
+                );
+              })}
+              <p className="text-[10px] text-slate-400 mt-1">
+                {hasMatrix
+                  ? 'Dejá el precio vacío en las combinaciones que no estén disponibles.'
+                  : 'Cada opción puede tener su propio precio y precio anterior (opcional).'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Distintivos</label>

@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { attachVariants, metersSortValue } = require('../lib/variants');
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (!ALLOWED_EXTS.includes(ext) || !ALLOWED_MIMES.includes(file.mimetype)) {
@@ -65,30 +66,8 @@ function deleteLocalUpload(imageUrl) {
 
 router.use(requireAuth);
 
-const getSizesForProduct = db.prepare(
-  'SELECT name, price, compare_at_price FROM product_size_prices WHERE product_id = ? ORDER BY name COLLATE NOCASE ASC'
-);
-
-const getColorImagesForProduct = db.prepare(
-  'SELECT color_name, image_url FROM product_color_images WHERE product_id = ?'
-);
-
-function buildColors(product) {
-  const names = String(product.color_options || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-  if (names.length === 0) return [];
-  const rows = getColorImagesForProduct.all(product.id);
-  const map = new Map(rows.map(r => [r.color_name, r.image_url]));
-  return names.map(name => ({ name, image: map.get(name) || null }));
-}
-
 function attachSizes(product) {
-  if (!product) return product;
-  const sizes = getSizesForProduct.all(product.id);
-  const colors = buildColors(product);
-  return { ...product, sizes, colors };
+  return attachVariants(db, product);
 }
 
 function parseColorsPayload(raw, colorFiles) {
@@ -186,6 +165,65 @@ function replaceSizesForProduct(productId, sizes) {
   tx();
 }
 
+// Matriz de precios por combinación talle × metros (fuente de verdad).
+function parseVariantPricesPayload(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  let arr;
+  try {
+    arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    const size = sanitizeStr(item.size, 50);
+    const meters = sanitizeStr(item.meters, 50);
+    if (!size && !meters) continue; // al menos una dimensión
+    const key = `${size.toLowerCase()}|${meters.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const price = parseInt(item.price);
+    if (isNaN(price) || price < 0) continue;
+    const compareAt = parseCompareAtPrice(item.compare_at_price ?? item.compareAtPrice);
+    out.push({ size_name: size, meters_name: meters, price, compare_at_price: compareAt });
+  }
+  return out;
+}
+
+const deleteVariantPricesStmt = db.prepare('DELETE FROM product_variant_prices WHERE product_id = ?');
+const insertVariantPriceStmt = db.prepare(
+  'INSERT INTO product_variant_prices (product_id, size_name, meters_name, price, compare_at_price) VALUES (?, ?, ?, ?, ?)'
+);
+
+function replaceVariantPricesForProduct(productId, rows) {
+  const tx = db.transaction(() => {
+    deleteVariantPricesStmt.run(productId);
+    for (const r of rows) {
+      insertVariantPriceStmt.run(productId, r.size_name, r.meters_name, r.price, r.compare_at_price);
+    }
+  });
+  tx();
+}
+
+// Decide qué filas escribir en la matriz: usa price_matrix si vino, si no deriva de
+// los talles (compat), si no devuelve null para no tocar la matriz existente.
+function resolveVariantRows(rawMatrix, parsedSizes) {
+  const parsedMatrix = parseVariantPricesPayload(rawMatrix);
+  if (parsedMatrix !== null) return parsedMatrix;
+  if (parsedSizes && parsedSizes.length > 0) {
+    return parsedSizes.map(s => ({
+      size_name: s.name,
+      meters_name: '',
+      price: s.price,
+      compare_at_price: s.compare_at_price,
+    }));
+  }
+  return null;
+}
+
 router.get('/products', (req, res) => {
   const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
   res.json(products.map(attachSizes));
@@ -235,6 +273,11 @@ router.post('/products', upload.fields([{ name: 'images', maxCount: MAX_IMAGES_P
 
   if (parsedSizes && parsedSizes.length > 0) {
     replaceSizesForProduct(result.lastInsertRowid, parsedSizes);
+  }
+
+  const variantRows = resolveVariantRows(req.body.price_matrix, parsedSizes, price, compare_at_price);
+  if (variantRows !== null) {
+    replaceVariantPricesForProduct(result.lastInsertRowid, variantRows);
   }
 
   const parsedColors = parseColorsPayload(req.body.colors, colorFiles);
@@ -291,6 +334,11 @@ router.put('/products/:id', upload.fields([{ name: 'images', maxCount: MAX_IMAGE
 
   if (parsedSizes !== null) {
     replaceSizesForProduct(parseInt(req.params.id), parsedSizes);
+  }
+
+  const variantRows = resolveVariantRows(req.body.price_matrix, parsedSizes, price, compare_at_price);
+  if (variantRows !== null) {
+    replaceVariantPricesForProduct(parseInt(req.params.id), variantRows);
   }
 
   const parsedColors = parseColorsPayload(req.body.colors, colorFiles);
@@ -371,6 +419,29 @@ router.post('/sizes', (req, res) => {
 router.delete('/sizes/:id', (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
   db.prepare('DELETE FROM sizes WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// === METROS ===
+router.get('/meters', (req, res) => {
+  res.json(db.prepare('SELECT * FROM meters ORDER BY sort_order ASC, name COLLATE NOCASE').all());
+});
+
+router.post('/meters', (req, res) => {
+  const name = sanitizeStr(req.body.name, 50);
+  if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+  try {
+    const result = db.prepare('INSERT INTO meters (name, sort_order) VALUES (?, ?)').run(name, metersSortValue(name));
+    res.status(201).json(db.prepare('SELECT * FROM meters WHERE id = ?').get(result.lastInsertRowid));
+  } catch (e) {
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Ese metraje ya existe' });
+    throw e;
+  }
+});
+
+router.delete('/meters/:id', (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'ID inválido' });
+  db.prepare('DELETE FROM meters WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
 
