@@ -53,12 +53,13 @@
     @apply font-display;
   }
 
+  /* Paleta nueva del logo Petit: lavanda (fondo) → rosa (corazón). */
   .text-gradient {
-    @apply bg-linear-to-r from-brand-magenta via-brand-pink to-brand-orange bg-clip-text text-transparent;
+    @apply bg-linear-to-r from-[#A283D3] via-[#D096C5] to-[#FAA3B4] bg-clip-text text-transparent;
   }
 
   .bg-gradient {
-    @apply bg-linear-to-r from-brand-magenta via-brand-pink to-brand-orange;
+    @apply bg-linear-to-r from-[#A283D3] via-[#D096C5] to-[#FAA3B4];
   }
 
   .scrollbar-hide {
