@@ -432,8 +432,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </div>
 
               <div className="flex flex-col gap-2 text-xs text-mocha border-t border-mocha/10 pt-4">
-                <span className="flex items-center gap-2"><Truck className="w-4 h-4 text-brand-magenta" /> Envío gratis en compras superiores a $20.000</span>
-                <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-brand-magenta" /> Cambios y devoluciones dentro de 14 días</span>
+                {/*<span className="flex items-center gap-2"><Truck className="w-4 h-4 text-brand-magenta" /> Envío gratis en compras superiores a $20.000</span>
+                <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-brand-magenta" /> Cambios y devoluciones dentro de 14 días</span>*/}
               </div>
             </div>
 

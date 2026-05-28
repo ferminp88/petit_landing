@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false, 
 
   return (
     <>
-      <nav className={`fixed ${topOffset ? 'top-8' : 'top-0'} left-0 right-0 z-50 bg-gradient text-white shadow-md`}>
+      <nav className={`fixed ${topOffset ? 'top-8' : 'top-0'} left-0 right-0 z-50 bg-[#A283D3] text-white shadow-md`}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
@@ -53,9 +53,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick, topOffset = false, 
             <a
               href="#"
               onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="flex-shrink-0 bg-white rounded-full p-1.5 shadow-sm"
+              className="flex-shrink-0"
             >
-              <img src="/logo.png" alt="Petit" className="h-9 w-auto" />
+              <img src="/logo_navbar.png" alt="Petit" className="h-12 w-auto" />
             </a>
           </div>
 
