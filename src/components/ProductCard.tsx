@@ -38,10 +38,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
+      className="h-full"
     >
       <Card
         onClick={onClick}
-        className="w-full overflow-hidden group cursor-pointer bg-card text-card-foreground shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl flex flex-col"
+        className="w-full h-full overflow-hidden group cursor-pointer bg-card text-card-foreground shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl flex flex-col"
       >
         {/* Image carousel */}
         <div className="relative aspect-square overflow-hidden bg-bone">
@@ -73,13 +74,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
         </div>
 
         {/* Content */}
-        <CardContent className="p-4">
-          <div className="space-y-3">
+        <CardContent className="p-4 flex-1">
+          <div className="space-y-3 h-full flex flex-col">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha">
+              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-mocha h-4 truncate">
                 {product.category}
               </p>
-              <h3 className="font-display font-semibold text-base text-ink leading-snug line-clamp-2 mt-1">
+              <h3 className="font-display font-semibold text-base text-ink leading-snug line-clamp-2 mt-1 min-h-[2.75rem]">
                 {product.name}
               </h3>
               <div className="flex items-center gap-2 mt-1">
